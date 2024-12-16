@@ -1,0 +1,26 @@
+{
+  "database": {
+    "PGHOST": "${PGHOST}",
+    "PGDATABASE": "${PGDATABASE}",
+    "PGUSER": "${PGUSER}",
+    "PGPASSWORD": "${PGPASSWORD}"
+  },
+  "variables": {
+    "T_avg": "Tiempo promedio (segundos) entre cambio de estado en la partida",
+    "C_rep": "Cantidad de estados repetidos"
+  },
+  "beliefs": {
+    "Incentive": {
+      "Description": "Creencia para definir la motivación del jugador",
+      "Weights":{
+        "w_T": 0.6,
+        "w_C": 0.4
+      },
+      "Standardization": {
+        "T_avg_max": 10,
+        "C_rep_max": 10
+      },
+      "Equation": "${w_T} * ${T_avg} + ${w_C} * ${C_rep}"
+    }
+  }
+}
