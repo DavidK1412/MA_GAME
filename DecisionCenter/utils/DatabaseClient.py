@@ -30,8 +30,9 @@ class DatabaseClient:
             self.cursor.execute(query, params)
             self.connection.commit()
         except psycopg2.DatabaseError as e:
-            self.connection.rollback()
             print(f"Error al ejecutar la consulta: {e}")
+            self.connection.rollback()
+            raise psycopg2.DatabaseError(f"Error al ejecutar la consulta: {e}")
 
     def fetch_results(self, query, params=None):
         try:

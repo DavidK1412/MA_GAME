@@ -5,22 +5,66 @@
     "PGUSER": "${PGUSER}",
     "PGPASSWORD": "${PGPASSWORD}"
   },
-  "variables": {
-    "T_avg": "Tiempo promedio (segundos) entre cambio de estado en la partida",
-    "C_rep": "Cantidad de estados repetidos"
-  },
   "beliefs": {
-    "Incentive": {
-      "Description": "Creencia para definir la motivación del jugador",
+    "T_path": {
+      "Description": "Trayectoria del jugador",
+      "Endpoint": "${T_PATH_EP}"
+    },
+    "K_rule": {
+      "Description": "Conocimiento de las reglas",
+      "Endpoint": "${K_RULE_EP}"
+    },
+    "S_curr": {
+      "Description": "Estado actual del jugador",
+      "Endpoint": null
+    },
+    "G_raph": {
+      "Description": "Grafo del jugador",
+      "Endpoint": "${GRAPH_EP}"
+    },
+    "T_avg": {
+      "Description": "Promedio de trayectoria del jugador",
+      "Endpoint": "${T_AVG_EP}"
+    },
+    "E_avg": {
+      "Description": "Número de errores y aciertos del jugador (si tiene más aciertos que errores, el valor es positivo)",
+      "Endpoint": "${E_AVG_EP}"
+    },
+    "A_num": {
+      "Description": "Número de intentos del jugador",
+      "Endpoint": "${A_NUM_EP}"
+    },
+    "L_val": {
+      "Description": "Buclicidad por partida",
+      "Endpoint": "${L_VAL_EP}"
+    },
+    "B_rnch": {
+      "Description": "Ramificación del juego",
+      "Endpoint": "${BRANCH_EP}"
+    }
+  },
+  "agents": {
+    "Feedback": {
+      "Description": "Agente encargado de retroalimentar al jugador",
+      "Actions": {
+        "Feedback": {
+          "Description": "Retroalimentación al jugador",
+          "Value": 0.25
+        },
+        "ReduceDifficulty": {
+          "Description": "Reducir la dificultad del juego",
+          "Value": 0.75
+        },
+        "TryAgain": {
+          "Description": "Intentar de nuevo",
+          "Value": 0.9
+        }
+      },
       "Weights":{
         "w_T": 0.6,
         "w_C": 0.4
       },
-      "Standardization": {
-        "T_avg_max": 10,
-        "C_rep_max": 10
-      },
-      "Equation": "${w_T} * ${T_avg} + ${w_C} * ${C_rep}"
+      "Equation": "${w_T} * ${T_avg} + ${w_C} * ${C_rep} * 0.1"
     }
   }
 }
