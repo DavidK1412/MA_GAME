@@ -1,0 +1,91 @@
+{
+    "info": {
+      "_postman_id": "84ab275a-1329-4034-a9f1-3ac3fe36de33",
+      "name": "Frog Game Simulation 3x3",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Move 1 - Initial",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": {
+            "mode": "raw",
+            "raw": "{ \"movement\": [1, 2, 3, 0, 4, 5, 6] }"
+          },
+          "url": {
+            "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565",
+            "protocol": "http",
+            "host": ["127", "0", "0", "1"],
+            "port": "8000",
+            "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"]
+          }
+        }
+      },
+      {
+        "name": "Move 2",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [1, 2, 0, 3, 4, 5, 6] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      },
+      {
+        "name": "Move 3",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [1, 0, 2, 3, 4, 5, 6] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      },
+      {
+        "name": "Move 4",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [0, 1, 2, 3, 4, 5, 6] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      },
+      {
+        "name": "Move 5",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [4, 1, 2, 3, 0, 5, 6] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      },
+      {
+        "name": "Move 6",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [4, 1, 2, 3, 5, 0, 6] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      },
+      {
+        "name": "Move 7",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [4, 1, 2, 3, 5, 6, 0] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      },
+      {
+        "name": "Move 8 - Victory",
+        "request": {
+          "method": "POST",
+          "header": [{"key": "Content-Type", "value": "application/json"}],
+          "body": { "mode": "raw", "raw": "{ \"movement\": [4, 5, 6, 0, 1, 2, 3] }" },
+          "url": { "raw": "http://127.0.0.1:8000/game/55a98e97-2f30-445e-b3f9-c666a15d7565", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["game", "55a98e97-2f30-445e-b3f9-c666a15d7565"] }
+        }
+      }
+    ]
+  }
+  
