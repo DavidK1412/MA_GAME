@@ -93,6 +93,8 @@ class GameController:
         query = "INSERT INTO movements (id, attempt_id, step, movement) VALUES (%s, %s, %s, %s)"
         movement.movement = [str(item) for item in movement.movement]
         movement.movement = ','.join(movement.movement)
+        #-- delete {} posibilities on movement.movement
+        movement.movement = movement.movement.replace("{", "").replace("}", "")
         params = (movement_id, movement_attempt_id, max_step, movement.movement)
         
         try:
