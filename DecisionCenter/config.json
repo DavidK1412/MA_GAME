@@ -1,70 +1,61 @@
 {
   "database": {
     "PGHOST": "${PGHOST}",
+    "PGPORT": "${PGPORT}",
     "PGDATABASE": "${PGDATABASE}",
     "PGUSER": "${PGUSER}",
     "PGPASSWORD": "${PGPASSWORD}"
   },
   "beliefs": {
-    "T_path": {
-      "Description": "Trayectoria del jugador",
-      "Endpoint": "${T_PATH_EP}"
+    "E": {
+      "Description": "Cantidad de errores del jugador",
+      "Endpoint": "${E_EP}"
     },
-    "K_rule": {
+    "B": {
+      "Description": "Buclicidad",
+      "Endpoint": "${B_EP}"
+    },
+    "IP": {
+      "Description": "Intentos por partida",
+      "Endpoint": "${IP_EP}"
+    },
+    "R": {
+      "Description": "Ramificación",
+      "Endpoint": "${R_EP}"
+    },
+    "CE": {
       "Description": "Conocimiento de las reglas",
-      "Endpoint": "${K_RULE_EP}"
+      "Endpoint": "${CE_EP}"
     },
-    "S_curr": {
-      "Description": "Estado actual del jugador",
-      "Endpoint": null
+    "TPM": {
+      "Description": "Tiempo por movimiento",
+      "Endpoint": "${TPM_EP}"
     },
-    "G_raph": {
-      "Description": "Grafo del jugador",
-      "Endpoint": "${GRAPH_EP}"
-    },
-    "T_avg": {
-      "Description": "Promedio de trayectoria del jugador",
-      "Endpoint": "${T_AVG_EP}"
-    },
-    "E_avg": {
-      "Description": "Número de errores y aciertos del jugador (si tiene más aciertos que errores, el valor es positivo)",
-      "Endpoint": "${E_AVG_EP}"
-    },
-    "A_num": {
-      "Description": "Número de intentos del jugador",
-      "Endpoint": "${A_NUM_EP}"
-    },
-    "L_val": {
-      "Description": "Buclicidad por partida",
-      "Endpoint": "${L_VAL_EP}"
-    },
-    "B_rnch": {
-      "Description": "Ramificación del juego",
-      "Endpoint": "${BRANCH_EP}"
+    "TP": {
+      "Description": "Tiempo promedio",
+      "Endpoint": "${TP_EP}"
     }
   },
   "agents": {
     "Feedback": {
       "Description": "Agente encargado de retroalimentar al jugador",
-      "Actions": {
-        "Feedback": {
-          "Description": "Retroalimentación al jugador",
-          "Value": 0.25
-        },
-        "ReduceDifficulty": {
-          "Description": "Reducir la dificultad del juego",
-          "Value": 0.75
-        },
-        "TryAgain": {
-          "Description": "Intentar de nuevo",
-          "Value": 0.9
-        }
-      },
-      "Weights":{
-        "w_T": 0.6,
-        "w_C": 0.4
-      },
-      "Equation": "${w_T} * ${T_avg} + ${w_C} * ${C_rep} * 0.1"
+      "Equation": "(E + B)/(E + B + 1)"
+    },
+    "Advice": {
+      "Description": "Agente encargado de dar consejos al jugador",
+      "Equation": "(IP + R)/(IP + R + 1)"
+    },
+    "Explain": {
+      "Description": "Agente encargado de explicar al jugador",
+      "Equation": "(1 - CE + E)/(E + 2)"
+    },
+    "Demonstrate": {
+      "Description": "Agente encargado de demostrar al jugador",
+      "Equation": "((TPM + 1) * (IP + 1) - A) / ((IP + 1) + ((TPM + 1) * (IP + 1) - A))"
+    },
+    "Ask": {
+      "Description": "Agente encargado de preguntar al jugador",
+      "Equation": "(B + TP)/(B + TP + 1)"
     }
   }
 }

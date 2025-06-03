@@ -1,3 +1,6 @@
 from .GameController import GameController
 from .DecisionController import DecisionController
-from .IncentiveController import IncentiveController
+from .FeedbackController import FeedbackController
+from .AdviceController import AdviceController
+from .ExplainController import ExplainController
+from .DemonstrateController import DemonstrateController
