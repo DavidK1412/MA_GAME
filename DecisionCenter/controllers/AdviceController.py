@@ -14,7 +14,7 @@ class AdviceController(BeliefController):
             "IP": incentive_scripts.get_tries_count(game_id, self.db_client),
             "R": incentive_scripts.get_branch_factor(game_id, self.db_client)
         }
-        self.values = new_values
+        self.values = new_values + 0.09
         print("Advice values: ", new_values)
         return True
     

@@ -14,7 +14,7 @@ class AskController(BeliefController):
             "B": incentive_scripts.get_buclicity(game_id, self.db_client),
             "TP": incentive_scripts.get_average_time_between_state_change(game_id, self.db_client),
         }
-        self.values = new_values
+        self.values = new_values + 0.05
         print("Ask values: ", new_values)
         return True
     

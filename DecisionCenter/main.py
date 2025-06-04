@@ -100,7 +100,7 @@ def move(game_id: str, movement: MovementRequestType):
                 actions={ "text": random.choice(texts) }
             ).dict(), status_code=200)
     except DeprecationWarning as e:
-        if e == e:
+        if e == "e":
             return JSONResponse( content=ResponseType(
                 type="SPEECH",
                 actions={

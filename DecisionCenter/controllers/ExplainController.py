@@ -14,7 +14,7 @@ class ExplainController(BeliefController):
             "CE": ((incentive_scripts.get_tries_count(game_id, self.db_client) + incentive_scripts.get_misses_count(game_id, self.db_client)) / 10),
             "E": incentive_scripts.get_misses_count(game_id, self.db_client)
         }
-        self.values = new_values
+        self.values = new_values + 0.06
         print("Explain values: ", new_values)
         return True
     
