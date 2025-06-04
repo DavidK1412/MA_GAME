@@ -118,7 +118,7 @@ class GameController:
             raise Exception(f"Error creating movement: {e}")
 
         if max_step == 1:
-            raise DeprecationWarning("First move")
+            raise DeprecationWarning("e")
         
         return True if max_step >= 1 else False
 

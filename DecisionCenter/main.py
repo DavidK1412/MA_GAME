@@ -100,11 +100,27 @@ def move(game_id: str, movement: MovementRequestType):
                 actions={ "text": random.choice(texts) }
             ).dict(), status_code=200)
     except DeprecationWarning as e:
+        if e == e:
+            return JSONResponse( content=ResponseType(
+                type="SPEECH",
+                actions={
+                    # si es "Best movement", text será "¡Excelente movimiento!", si es "Final movement", text será "Felicidades, has ganado!"
+                    "text": "Comienza tu camino!"
+                }
+            ).dict(), status_code=200)
+        if e == "Final movement":
+            return JSONResponse( content=ResponseType(
+                type="SPEECH",
+                actions={
+                    # si es "Best movement", text será "¡Excelente movimiento!", si es "Final movement", text será "Felicidades, has ganado!"
+                    "text": "¡Felicidades, has ganado el nivel!"
+                }
+            ).dict(), status_code=200)
         return JSONResponse( content=ResponseType(
                 type="SPEECH",
                 actions={
                     # si es "Best movement", text será "¡Excelente movimiento!", si es "Final movement", text será "Felicidades, has ganado!"
-                    "text": "¡Excelente movimiento!" if e == "Best movement" or e == "First move" else "Felicidades, has ganado el nivel!"
+                    "text": "¡Excelente movimiento!"
                 }
             ).dict(), status_code=200)
     except Exception as e:
