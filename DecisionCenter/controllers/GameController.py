@@ -90,7 +90,7 @@ class GameController:
                 params = (str(uuid.uuid4()), actual_game_attemp['id'], max_step, movement.movement, True)
                 self.db_client.execute_query(query, params)
                 raise DeprecationWarning("Best movement")
-            if movement.movement == difficulty['final_state']:
+            if movement.movement == difficulty['final_state'] and max_step > 1:
                 # guarda el movimiento como correcto y termina el intento
                 query = "INSERT INTO movements (id, attempt_id, step, movement, is_correct) VALUES (%s, %s, %s, %s, %s)"
                 movement.movement = [str(item) for item in movement.movement]
