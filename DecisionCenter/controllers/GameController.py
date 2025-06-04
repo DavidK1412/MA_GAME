@@ -84,16 +84,31 @@ class GameController:
             if best_movement == movement.movement:
                 # guarda movimiento como correcto
                 query = "INSERT INTO movements (id, attempt_id, step, movement, is_correct) VALUES (%s, %s, %s, %s, %s)"
+                movement.movement = [str(item) for item in movement.movement]
+                movement.movement = ','.join(movement.movement) 
+                movement.movement = movement.movement.replace("{", "").replace("}", "")
                 params = (str(uuid.uuid4()), actual_game_attemp['id'], max_step, movement.movement, True)
                 self.db_client.execute_query(query, params)
                 raise DeprecationWarning("Best movement")
+            if movement.movement == difficulty['final_state']:
+                # guarda el movimiento como correcto y termina el intento
+                query = "INSERT INTO movements (id, attempt_id, step, movement, is_correct) VALUES (%s, %s, %s, %s, %s)"
+                movement.movement = [str(item) for item in movement.movement]
+                movement.movement = ','.join(movement.movement) 
+                movement.movement = movement.movement.replace("{", "").replace("}", "")
+                params = (str(uuid.uuid4()), actual_game_attemp['id'], max_step, movement.movement, True)
+                self.db_client.execute_query(query, params)
+                query = "UPDATE game_attempts SET is_active = %s WHERE id = %s"
+                params = (False, actual_game_attemp['id'])
+                self.db_client.execute_query(query, params)
+                raise DeprecationWarning("Final movement")
+
         max_step = int(max_step) + 1
         movement_id = str(uuid.uuid4())
         movement_attempt_id = actual_game_attemp['id']
         query = "INSERT INTO movements (id, attempt_id, step, movement) VALUES (%s, %s, %s, %s)"
         movement.movement = [str(item) for item in movement.movement]
         movement.movement = ','.join(movement.movement)
-        #-- delete {} posibilities on movement.movement
         movement.movement = movement.movement.replace("{", "").replace("}", "")
         params = (movement_id, movement_attempt_id, max_step, movement.movement)
         

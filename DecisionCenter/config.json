@@ -51,7 +51,7 @@
     },
     "Demonstrate": {
       "Description": "Agente encargado de demostrar al jugador",
-      "Equation": "((TPM + 1) * (IP + 1) - A) / ((IP + 1) + ((TPM + 1) * (IP + 1) - A))"
+      "Equation": "(((TPM + 1) * (IP + 1) - A) / ((IP + 1) + ((TPM + 1) * (IP + 1) - A))) - 0.1"
     },
     "Ask": {
       "Description": "Agente encargado de preguntar al jugador",

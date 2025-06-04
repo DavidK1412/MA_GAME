@@ -1,10 +1,11 @@
 import json
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from utils import load_json_config, DatabaseClient, get_average_time_between_state_change, get_repeated_states_count
+from utils import load_json_config, DatabaseClient, get_tries_count
 from domain import GameType, ResponseType, MovementRequestType 
-from controllers import GameController, FeedbackController, DecisionController, AdviceController, ExplainController, DemonstrateController
+from controllers import GameController, FeedbackController, DecisionController, AdviceController, ExplainController, DemonstrateController, AskController
 from functools import lru_cache
+import random
 
 app = FastAPI()
 
@@ -28,6 +29,7 @@ beliefs = [DemonstrateController(db, "Demonstrate"),
     AdviceController(db, "Advice"),
     FeedbackController(db, "Feedback"),
     ExplainController(db, "Explain"),
+    AskController(db, "Ask")
 ]
 decision_controller = DecisionController(beliefs, config)
 
@@ -59,17 +61,49 @@ def move(game_id: str, movement: MovementRequestType):
         selected_belief = None
         game_controller.start_attempt(game_id, movement)
         if game_controller.move(game_id, movement, config):
-            selected_belief = decision_controller.make_decision(game_id)
-            response = selected_belief.action(game_id)
-            if isinstance(response, ResponseType):
-                return JSONResponse(content=response.dict(), status_code=200)
-            else:
-                return JSONResponse(content=response, status_code=200)
+            # haz que cada 5 intentos se haga una decision
+            if get_tries_count(game_id, db) % 3 == 0:
+                selected_belief = decision_controller.make_decision(game_id)
+                response = selected_belief.action(game_id)
+                if isinstance(response, ResponseType):
+                    return JSONResponse(content=response.dict(), status_code=200)
+                else:
+                    return JSONResponse(content=response, status_code=200)
+            texts = [
+                # Frases motivadoras sencillas
+                "¡Muy bien!",
+                "¡Tú puedes!",
+                "¡Buen trabajo!",
+                "¡Sigue así!",
+                "¡Lo hiciste bien!",
+                "¡Vamos, un paso más!",
+                "¡Eso estuvo genial!",
+                "¡Confío en ti!",
+                "¡Te estás acercando!",
+                "¡Qué bien lo estás haciendo!",
+
+                # Recordatorios de reglas simples
+                "Recuerda: los cubos azules van hacia la derecha.",
+                "Recuerda: los cubos rojos van hacia la izquierda.",
+                "Solo se puede mover al espacio vacío.",
+                "También puedes saltar si hay un cubo en medio.",
+                "No saltes sobre tu propio color.",
+                "Piensa un poquito antes de moverte.",
+                "Hazlo con calma.",
+                "Mira bien antes de tocar.",
+                "Usa el espacio vacío para ayudar.",
+                "No te preocupes si te equivocas, inténtalo otra vez."
+            ]
+            return JSONResponse(content=ResponseType(
+                type="SPEECH",
+                actions={ "text": random.choice(texts) }
+            ).dict(), status_code=200)
     except DeprecationWarning as e:
         return JSONResponse( content=ResponseType(
                 type="SPEECH",
                 actions={
-                    "text": "De momento todo perfecto, mucho ánimo!"
+                    # si es "Best movement", text será "¡Excelente movimiento!", si es "Final movement", text será "Felicidades, has ganado!"
+                    "text": "¡Excelente movimiento!" if e == "Best movement" else "Felicidades, has ganado el nivel!"
                 }
             ).dict(), status_code=200)
     except Exception as e:

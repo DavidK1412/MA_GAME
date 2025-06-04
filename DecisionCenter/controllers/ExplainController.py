@@ -3,7 +3,7 @@ from domain.Types import ResponseType
 from .BeliefController import BeliefController
 from utils import DatabaseClient, incentive_scripts
 from uuid import uuid4
-
+import random
 
 class ExplainController(BeliefController):
     def __init__(self, dn_client: DatabaseClient, name: str):
@@ -11,7 +11,7 @@ class ExplainController(BeliefController):
 
     def update_values(self, game_id: str, config: dict):
         new_values: dict = {
-            "CE": (1 - (incentive_scripts.get_tries_count(game_id, self.db_client) / incentive_scripts.get_branch_factor(game_id, self.db_client))) * (1 - (incentive_scripts.get_misses_count(game_id, self.db_client) / 10)),
+            "CE": ((incentive_scripts.get_tries_count(game_id, self.db_client) + incentive_scripts.get_misses_count(game_id, self.db_client)) / 10),
             "E": incentive_scripts.get_misses_count(game_id, self.db_client)
         }
         self.values = new_values
@@ -27,11 +27,17 @@ class ExplainController(BeliefController):
         query = "UPDATE movements SET interuption = TRUE WHERE attempt_id = %s AND step = (SELECT MAX(step) FROM movements WHERE attempt_id = %s)"
         params = (attempt_id, attempt_id)
         self.db_client.execute_query(query, params)
+
+        posibles_texts = [
+            "Veamos un poco mejor las reglas!",
+            "Quizás un repaso nos ayude a entender mejor el juego",
+            "Vamos a reforzar un poco más las reglas"
+        ]
         
         return ResponseType(
             type="TUTORIAL",
             actions={
-                "text": "Con este video seguramente entenderás mejor el juego",
+                "text": random.choice(posibles_texts),
                 "video": "VIDEO2.MP4"
             }
         )
