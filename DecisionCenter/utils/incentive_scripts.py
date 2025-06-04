@@ -60,8 +60,10 @@ def get_misses_count(game_id: str, db_client: DatabaseClient) -> int:
     query = "SELECT count FROM movements_misses WHERE game_attempt_id = %s"
     params = (game_attempt_id,)
     result = db_client.fetch_results(query, params)
+    if not result or not result[0]['count']:
+        return 0
     # Get misses count
-    misses = result[0]['count'] if result else 0
+    misses = result[0]['count']
     print(f'Misses: {misses}')
 
     return misses
