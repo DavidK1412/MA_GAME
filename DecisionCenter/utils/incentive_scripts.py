@@ -11,10 +11,14 @@ def get_actual_attempt_id(game_id: str, db_client: DatabaseClient) -> str:
     query = "SELECT id FROM game_attempts WHERE game_id = %s AND is_active IS TRUE"
     params = (game_id,)
     result = db_client.fetch_results(query, params)
+    if not result:
+        return None
     return result[0]['id']
 
 def get_average_time_between_state_change(game_id: str, db_client: DatabaseClient) -> float:
     game_attempt_id = get_actual_attempt_id(game_id, db_client)
+    if not game_attempt_id:
+        return 0
     query = "SELECT * FROM movements WHERE attempt_id = %s AND interuption IS FALSE ORDER BY movement_time ASC;"
     params = (game_attempt_id,)
     result = db_client.fetch_results(query, params)
@@ -91,8 +95,10 @@ def get_tries_count(game_id: str, db_client: DatabaseClient) -> int:
     query = "SELECT MAX(step) FROM movements WHERE attempt_id = %s"
     params = (game_attempt_id,)
     result = db_client.fetch_results(query, params)
+    if not result or not result[0]['max']:
+        return 0
     # Get tries count
-    tries = result[0]['max'] if result else 0
+    tries = result[0]['max']
     print(f'Tries: {tries}')
 
     return tries

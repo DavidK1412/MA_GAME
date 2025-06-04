@@ -62,7 +62,8 @@ def move(game_id: str, movement: MovementRequestType):
         game_controller.start_attempt(game_id, movement)
         if game_controller.move(game_id, movement, config):
             # haz que cada 5 intentos se haga una decision
-            if get_tries_count(game_id, db) % 3 == 0:
+            tries = get_tries_count(game_id, db)
+            if tries % 3 == 0 and tries != 0:
                 selected_belief = decision_controller.make_decision(game_id)
                 response = selected_belief.action(game_id)
                 if isinstance(response, ResponseType):
