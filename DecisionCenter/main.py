@@ -104,7 +104,7 @@ def move(game_id: str, movement: MovementRequestType):
                 type="SPEECH",
                 actions={
                     # si es "Best movement", text será "¡Excelente movimiento!", si es "Final movement", text será "Felicidades, has ganado!"
-                    "text": "¡Excelente movimiento!" if e == "Best movement" else "Felicidades, has ganado el nivel!"
+                    "text": "¡Excelente movimiento!" if e == "Best movement" or e == "First move" else "Felicidades, has ganado el nivel!"
                 }
             ).dict(), status_code=200)
     except Exception as e:
