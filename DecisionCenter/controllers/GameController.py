@@ -66,7 +66,7 @@ class GameController:
             difficulty = {
                 1: {
                     "blocks_per_team": 3,
-                    "final_state": [6, 5, 4, 0, 1, 2, 3]
+                    "final_state": [4, 5, 6, 0, 1, 2, 3]
                 },
                 2: {
                     "blocks_per_team": 4,
