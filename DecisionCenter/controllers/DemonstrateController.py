@@ -15,8 +15,8 @@ class DemonstrateController(BeliefController):
             "TPM": incentive_scripts.get_average_time_between_state_change(game_id, self.db_client),
             "A": incentive_scripts.get_number_of_assertions(game_id, self.db_client)
         }
-        self.values = new_values + 0.03
-        print("Advice values: ", new_values)
+        self.values = new_values
+        print("Demonstrate values: ", new_values)
         return True
     
     def action(self, game_id: str):

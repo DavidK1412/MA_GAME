@@ -13,7 +13,7 @@ class FeedbackController(BeliefController):
             "B": incentive_scripts.get_buclicity(game_id, self.db_client)
         }
         print("Feedback values: ", new_values)
-        self.values = new_values + 0.07
+        self.values = new_values
         return True
     
     def action(self, game_id: str):
