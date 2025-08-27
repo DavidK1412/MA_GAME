@@ -3,9 +3,9 @@ Feedback belief controller for providing personalized feedback to players.
 """
 
 from typing import Any, Dict
-from app.controllers.base import BeliefController
-from app.domain.models.response import SpeechResponse, GameResponse
-from app.utils.incentive_scripts import get_game_progress, calculate_player_skill_level
+from controllers.base import BeliefController
+from domain.models.response import SpeechResponse, GameResponse
+from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
 
 
 class FeedbackController(BeliefController):

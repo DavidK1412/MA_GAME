@@ -3,9 +3,9 @@ Decision controller for managing belief system decisions.
 """
 
 from typing import List, Dict, Any, Optional
-from app.controllers.base import BaseController
-from app.core.exceptions import BeliefEvaluationError
-from app.core.logging import get_logger
+from controllers.base import BaseController
+from core.exceptions import BeliefEvaluationError
+from core.logging import get_logger
 
 
 class DecisionController(BaseController):

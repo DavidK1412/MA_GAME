@@ -3,10 +3,10 @@ Demonstrate belief controller for showing players how to solve game situations.
 """
 
 from typing import Any, Dict, List, Optional
-from app.controllers.base import BeliefController
-from app.domain.models.response import SpeechResponse, GameResponse
-from app.utils.incentive_scripts import get_game_progress, calculate_player_skill_level
-from app.utils.graph_utils import best_next_move, possible_moves, is_game_winnable
+from controllers.base import BeliefController
+from domain.models.response import SpeechResponse, GameResponse
+from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
+from utils.graph_utils import best_next_move, possible_moves, is_game_winnable
 
 
 class DemonstrateController(BeliefController):

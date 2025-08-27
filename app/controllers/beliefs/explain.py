@@ -3,9 +3,9 @@ Explain belief controller for providing explanations to players.
 """
 
 from typing import Any, Dict
-from app.controllers.base import BeliefController
-from app.domain.models.response import SpeechResponse
-from app.utils.incentive_scripts import get_game_progress, calculate_player_skill_level
+from controllers.base import BeliefController
+from domain.models.response import SpeechResponse
+from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
 
 
 class ExplainController(BeliefController):

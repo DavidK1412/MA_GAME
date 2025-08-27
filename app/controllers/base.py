@@ -4,8 +4,8 @@ Base controller with common functionality.
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
-from app.core.logging import get_logger
-from app.utils.database import DatabaseClient
+from core.logging import get_logger
+from utils.database import DatabaseClient
 
 
 class BaseController(ABC):
@@ -97,7 +97,7 @@ class BeliefController(BaseController):
                 raise ValueError(f'No equation found for belief {self.name}')
             
             # Import here to avoid circular imports
-            from app.utils.equation_utils import evaluate_equation, replace_placeholders_in_equation
+            from utils.equation_utils import evaluate_equation, replace_placeholders_in_equation
             
             weights = belief_config.get('Weights', {})
             standardization = belief_config.get('Standardization', {})

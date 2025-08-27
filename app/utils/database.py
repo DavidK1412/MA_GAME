@@ -7,8 +7,8 @@ import psycopg2.extras
 from psycopg2.extras import DictCursor
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any, Union
-from app.core.logging import get_logger
-from app.core.exceptions import DatabaseError
+from core.logging import get_logger
+from core.exceptions import DatabaseError
 
 logger = get_logger(__name__)
 

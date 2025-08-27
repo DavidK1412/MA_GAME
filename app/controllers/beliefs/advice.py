@@ -4,10 +4,10 @@ Advice belief controller for providing guidance to players.
 
 import uuid
 from typing import Optional, Dict, Any
-from app.controllers.base import BeliefController
-from app.domain.models.response import SpeechResponse, GameResponse, ResponseType
-from app.core.exceptions import GameNotFoundError, InvalidMovementError
-from app.utils.incentive_scripts import get_tries_count, get_branch_factor
+from controllers.base import BeliefController
+from domain.models.response import SpeechResponse, GameResponse, ResponseType
+from core.exceptions import GameNotFoundError, InvalidMovementError
+from utils.incentive_scripts import get_tries_count, get_branch_factor
 
 
 class AdviceController(BeliefController):

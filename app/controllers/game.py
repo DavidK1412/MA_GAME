@@ -4,12 +4,12 @@ Game controller for managing game logic and state.
 
 import uuid
 from typing import Optional, Dict, Any, List
-from app.controllers.base import BaseController
-from app.domain.models.game import GameType, GameState, GameAttempt
-from app.domain.models.movement import MovementRequestType, Movement, MovementType
-from app.domain.models.response import Response, ResponseType, GameResponse, SpeechResponse
-from app.core.exceptions import GameNotFoundError, InvalidMovementError, GameCompletedError
-from app.utils.graph_utils import best_next_move
+from controllers.base import BaseController
+from domain.models.game import GameType, GameState, GameAttempt
+from domain.models.movement import MovementRequestType, Movement, MovementType
+from domain.models.response import Response, ResponseType, GameResponse, SpeechResponse
+from core.exceptions import GameNotFoundError, InvalidMovementError, GameCompletedError
+from utils.graph_utils import best_next_move
 
 
 class GameController(BaseController):
