@@ -1,0 +1,42 @@
+# Core FastAPI dependencies
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.3
+pydantic_core==2.27.1
+
+# Database
+psycopg2-binary==2.9.10
+
+# HTTP and networking
+httptools==0.6.4
+h11==0.14.0
+starlette==0.41.3
+websockets==14.1
+hypercorn==0.14.4
+
+# Utilities
+python-dotenv==1.0.1
+PyYAML==6.0.2
+click==8.1.7
+colorama==0.4.6
+
+# Data processing
+networkx==3.1
+
+# Type checking
+typing_extensions==4.12.2
+annotated-types==0.7.0
+
+# Async support
+anyio==4.7.0
+sniffio==1.3.1
+idna==3.10
+
+# Development and testing
+watchfiles==1.0.3
+
+# Logging and monitoring
+structlog==23.2.0
+
+# Security
+python-multipart==0.0.6

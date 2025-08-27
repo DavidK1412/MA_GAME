@@ -1,0 +1,331 @@
+{
+  "info": {
+    "name": "Frog Game - Sistema de Beliefs",
+    "description": "Colección completa para probar el juego de ranas con sistema de beliefs adaptativo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "game_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "attempt_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "difficulty",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏠 Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        },
+        "description": "Verificar que la API esté funcionando"
+      },
+      "response": []
+    },
+    {
+      "name": "🎮 Crear Nuevo Juego",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"difficulty\": {{difficulty}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/game/create",
+          "host": ["{{base_url}}"],
+          "path": ["game", "create"]
+        },
+        "description": "Crear un nuevo juego con la dificultad especificada"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    if (response.data && response.data.game_id) {",
+              "        pm.collectionVariables.set('game_id', response.data.game_id);",
+              "        console.log('Game ID set:', response.data.game_id);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚀 Iniciar Intento",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/game/start",
+          "host": ["{{base_url}}"],
+          "path": ["game", "start"]
+        },
+        "description": "Iniciar un nuevo intento para el juego"
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    if (response.data && response.data.attempt_id) {",
+              "        pm.collectionVariables.set('attempt_id', response.data.attempt_id);",
+              "        console.log('Attempt ID set:', response.data.attempt_id);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Obtener Estado del Juego",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/game/{{game_id}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["game", "{{game_id}}", "status"]
+        },
+        "description": "Obtener el estado actual del juego"
+      },
+      "response": []
+    },
+    {
+      "name": "🔄 Realizar Movimiento",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\",\n  \"movement\": [3, 2, 1, 0, -1, -2, -3]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/game/move",
+          "host": ["{{base_url}}"],
+          "path": ["game", "move"]
+        },
+        "description": "Realizar un movimiento en el juego"
+      },
+      "response": []
+    },
+    {
+      "name": "🧠 Evaluar Beliefs",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\",\n  \"config\": {\n    \"difficulty\": {{difficulty}},\n    \"max_tries\": 20,\n    \"time_limit\": 300\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/beliefs/evaluate",
+          "host": ["{{base_url}}"],
+          "path": ["beliefs", "evaluate"]
+        },
+        "description": "Evaluar todos los beliefs del sistema"
+      },
+      "response": []
+    },
+    {
+      "name": "💡 Obtener Mejor Belief",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/beliefs/best/{{game_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["beliefs", "best", "{{game_id}}"]
+        },
+        "description": "Obtener el belief con mayor valor para el juego"
+      },
+      "response": []
+    },
+    {
+      "name": "🎯 Ejecutar Acción del Belief",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\",\n  \"belief_type\": \"advice\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/beliefs/action",
+          "host": ["{{base_url}}"],
+          "path": ["beliefs", "action"]
+        },
+        "description": "Ejecutar la acción del belief seleccionado"
+      },
+      "response": []
+    },
+    {
+      "name": "📈 Obtener Métricas del Jugador",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/game/{{game_id}}/metrics",
+          "host": ["{{base_url}}"],
+          "path": ["game", "{{game_id}}", "metrics"]
+        },
+        "description": "Obtener métricas detalladas del jugador"
+      },
+      "response": []
+    },
+    {
+      "name": "🎮 Movimiento Incorrecto (Simular Error)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\",\n  \"movement\": [3, 2, 1, -1, 0, -2, -3]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/game/move",
+          "host": ["{{base_url}}"],
+          "path": ["game", "move"]
+        },
+        "description": "Simular un movimiento incorrecto para probar el sistema de beliefs"
+      },
+      "response": []
+    },
+    {
+      "name": "🔄 Movimiento Repetitivo (Simular Buclicity)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\",\n  \"movement\": [3, 2, 1, 0, -1, -2, -3]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/game/move",
+          "host": ["{{base_url}}"],
+          "path": ["game", "move"]
+        },
+        "description": "Simular un movimiento repetitivo para probar detección de buclicity"
+      },
+      "response": []
+    },
+    {
+      "name": "🏆 Completar Juego",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"game_id\": \"{{game_id}}\",\n  \"movement\": [-3, -2, -1, 0, 1, 2, 3]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/game/move",
+          "host": ["{{base_url}}"],
+          "path": ["game", "move"]
+        },
+        "description": "Completar el juego con el estado objetivo"
+      },
+      "response": []
+    },
+    {
+      "name": "📊 Beliefs Finales",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/beliefs/{{game_id}}/summary",
+          "host": ["{{base_url}}"],
+          "path": ["beliefs", "{{game_id}}", "summary"]
+        },
+        "description": "Obtener resumen final de todos los beliefs"
+      },
+      "response": []
+    },
+    {
+      "name": "🔍 Debug - Estado de la Base de Datos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/debug/game/{{game_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["debug", "game", "{{game_id}}"]
+        },
+        "description": "Endpoint de debug para ver el estado completo en la base de datos"
+      },
+      "response": []
+    }
+  ]
+}
