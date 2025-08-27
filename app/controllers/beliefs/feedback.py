@@ -241,8 +241,6 @@ class FeedbackController(BeliefController):
             # Good performance
             return (
                 "¡Muy bien! Estás progresando excelentemente. "
-                f"Has completado el nivel en solo {metrics['tries_count']} movimientos "
-                f"con solo {metrics['misses_count']} errores. "
                 "Continúa así y pronto serás un experto."
             )
         
@@ -258,8 +256,7 @@ class FeedbackController(BeliefController):
             else:
                 return (
                     "Buen progreso. Estás entendiendo las reglas del juego. "
-                    f"Con {metrics['tries_count']} movimientos, "
-                    "estás cerca de optimizar tu estrategia. "
+                    "Estás cerca de optimizar tu estrategia. "
                     "¡Sigue practicando!"
                 )
         
@@ -275,8 +272,7 @@ class FeedbackController(BeliefController):
             else:
                 return (
                     "Estás aprendiendo, y eso es lo importante. "
-                    f"Con {metrics['tries_count']} intentos, "
-                    "estás explorando diferentes soluciones. "
+                    "Estás explorando diferentes soluciones. "
                     "Recuerda: las ranas solo pueden moverse hacia adelante. "
                     "¡Mantén la calma y sigue intentando!"
                 )
