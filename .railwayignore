@@ -1,0 +1,43 @@
+# Development files
+start_server.py
+env.example
+*.log
+logs/
+
+# Testing
+app/tests/
+tests/
+
+# Documentation
+README.md
+BELIEF_SYSTEM_README.md
+GUIA_POSTMAN_PASO_A_PASO.md
+FROG_GAME_POSTMAN_COLLECTION.json
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Database
+db/seeds/
+*.sql
