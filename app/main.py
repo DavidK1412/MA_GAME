@@ -36,7 +36,7 @@ decision_controller = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    # Startup
+    # Startup 
     logger.info("Starting Frog Game API...")
     
     try:
