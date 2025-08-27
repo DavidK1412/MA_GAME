@@ -9,20 +9,20 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.config.settings import settings
-from app.core.logging import setup_logging, get_logger
-from app.core.exceptions import GameException, GameNotFoundError, InvalidMovementError, GameCompletedError
-from app.utils.database import DatabaseClient
-from app.domain.models.game import GameType
-from app.domain.models.movement import MovementRequestType
-from app.domain.models.response import Response, ResponseType, SpeechResponse, GameResponse, ErrorResponse
-from app.controllers.game import GameController
-from app.controllers.decision import DecisionController
-from app.controllers.beliefs.advice import AdviceController
-from app.controllers.beliefs.feedback import FeedbackController
-from app.controllers.beliefs.explain import ExplainController
-from app.controllers.beliefs.demonstrate import DemonstrateController
-from app.controllers.beliefs.ask import AskController
+from config.settings import settings
+from core.logging import setup_logging, get_logger
+from core.exceptions import GameException, GameNotFoundError, InvalidMovementError, GameCompletedError
+from utils.database import DatabaseClient
+from domain.models.game import GameType
+from domain.models.movement import MovementRequestType
+from domain.models.response import Response, ResponseType, SpeechResponse, GameResponse, ErrorResponse
+from controllers.game import GameController
+from controllers.decision import DecisionController
+from controllers.beliefs.advice import AdviceController
+from controllers.beliefs.feedback import FeedbackController
+from controllers.beliefs.explain import ExplainController
+from controllers.beliefs.demonstrate import DemonstrateController
+from controllers.beliefs.ask import AskController
 
 # Setup logging
 setup_logging(settings.LOG_LEVEL, settings.LOG_FILE)
@@ -36,7 +36,7 @@ decision_controller = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    # Startup 
+    # Startup
     logger.info("Starting Frog Game API...")
     
     try:
