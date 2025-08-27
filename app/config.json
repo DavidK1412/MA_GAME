@@ -1,0 +1,31 @@
+{
+  "database": {
+    "PGHOST": "localhost",
+    "PGPORT": 5432,
+    "PGDATABASE": "frog_game",
+    "PGUSER": "postgres",
+    "PGPASSWORD": "password"
+  },
+  "api": {
+    "title": "Frog Game API",
+    "version": "1.0.0",
+    "description": "API para el juego de ranas con sistema de beliefs adaptativo",
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "game": {
+    "max_tries": 20,
+    "time_limit": 300,
+    "decision_interval": 3
+  },
+  "belief_system": {
+    "update_interval": 5,
+    "threshold": 0.5
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/frog_game.log",
+    "max_bytes": 10485760,
+    "backup_count": 5
+  }
+}
