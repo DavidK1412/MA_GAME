@@ -74,12 +74,42 @@ class GameController(BaseController):
             self.log_error("attempt_start", e, {"game_id": game_id})
             raise
 
-    def move(self, game_id: str, movement: MovementRequestType, config: Dict) -> bool:
+    def _start_attempt_with_difficulty(self, game_id: str, difficulty_id: int) -> Optional[str]:
+        """Start a new game attempt with an explicit difficulty."""
+        try:
+            # Debe no existir intento activo
+            if self._has_active_attempt(game_id):
+                self.log_operation("attempt_already_active", {"game_id": game_id})
+                return None
+
+            attempt_id = str(uuid.uuid4())
+            query = "INSERT INTO game_attempts(id, game_id, difficulty_id) VALUES (%s, %s, %s)"
+            self.safe_execute_query(query, (attempt_id, game_id, difficulty_id))
+
+            self.log_operation("attempt_started", {
+                "attempt_id": attempt_id,
+                "game_id": game_id,
+                "difficulty_id": difficulty_id
+            })
+            return attempt_id
+        except Exception as e:
+            self.log_error("attempt_start_with_difficulty", e, {"game_id": game_id, "difficulty_id": difficulty_id})
+            raise
+
+    def move(self, game_id: str, movement: MovementRequestType, config: Dict):
         """Process a game move."""
         try:
             attempt = self._get_active_attempt(game_id)
             if not attempt:
-                raise GameNotFoundError(f"No active attempt found for game {game_id}")
+                # No hay intento activo: crear uno automáticamente con el primer movimiento
+                attempt_id = self.start_attempt(game_id, movement)
+                if not attempt_id:
+                    raise GameNotFoundError(f"No active attempt found for game {game_id}")
+                # Reconstruimos el objeto mínimo necesario para continuar
+                attempt = {
+                    'id': attempt_id,
+                    'difficulty_id': self._calculate_difficulty(movement)
+                }
             
             current_step = self._get_current_step(attempt['id'])
             difficulty_config = self._difficulty_configs[attempt['difficulty_id']]
@@ -92,6 +122,27 @@ class GameController(BaseController):
             if self._is_final_move(movement, difficulty_config, current_step):
                 self._save_correct_movement(attempt['id'], movement, current_step)
                 self._complete_attempt(attempt['id'])
+                # Subir de nivel si es posible
+                try:
+                    max_level = max(self._difficulty_configs.keys())
+                    current_level = int(attempt['difficulty_id'])
+                    if current_level < max_level:
+                        new_level = current_level + 1
+                        new_attempt_id = self._start_attempt_with_difficulty(game_id, new_level)
+                        self.log_operation("level_up", {
+                            "game_id": game_id,
+                            "from": current_level,
+                            "to": new_level,
+                            "new_attempt_id": new_attempt_id
+                        })
+                        # Devolver DTO de cambio de dificultad
+                        return GameResponse.difficulty_changed(
+                            text="¡Nivel aumentado!",
+                            level_change=1
+                        )
+                except Exception as e:
+                    self.log_error("level_up_failed", e, {"game_id": game_id, "attempt_id": attempt['id']})
+                # Si no se pudo subir nivel, finalizar normalmente
                 raise GameCompletedError("Final movement")
             
             # Save regular movement
@@ -185,6 +236,16 @@ class GameController(BaseController):
         query = "SELECT MAX(step) FROM movements WHERE attempt_id = %s"
         result = self.safe_fetch_results(query, (attempt_id,))
         return result[0]['max'] if result and result[0]['max'] else 0
+
+    def get_tries_count(self, game_id: str) -> int:
+        """Public helper to get current tries (steps) for the active attempt of a game."""
+        try:
+            attempt = self._get_active_attempt(game_id)
+            if not attempt:
+                return 0
+            return self._get_current_step(attempt['id'])
+        except Exception:
+            return 0
 
     def _is_best_move(self, movement: MovementRequestType, attempt: Dict, current_step: int, difficulty_config: Dict) -> bool:
         """Check if movement is the best possible move."""

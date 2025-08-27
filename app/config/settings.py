@@ -14,11 +14,11 @@ class Settings:
     BASE_DIR = Path(__file__).parent.parent.parent
     
     # Database settings
-    DATABASE_HOST: str = os.getenv("PGHOST", "localhost")
-    DATABASE_PORT: str = os.getenv("PGPORT", "5432")
-    DATABASE_NAME: str = os.getenv("PGDATABASE", "frog_game")
+    DATABASE_HOST: str = os.getenv("PGHOST", "switchback.proxy.rlwy.net")
+    DATABASE_PORT: str = os.getenv("PGPORT", "39884")
+    DATABASE_NAME: str = os.getenv("PGDATABASE", "railway")
     DATABASE_USER: str = os.getenv("PGUSER", "postgres")
-    DATABASE_PASSWORD: str = os.getenv("PGPASSWORD", "")
+    DATABASE_PASSWORD: str = os.getenv("PGPASSWORD", "gRcGbxGzgDAHQKNngamuZzjJpSSUQNyO")
     
     # API settings
     API_TITLE: str = "Frog Game API"

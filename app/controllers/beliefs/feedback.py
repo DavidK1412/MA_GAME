@@ -50,18 +50,10 @@ class FeedbackController(BeliefController):
             difficulty_score = self._calculate_difficulty_score(metrics)
             belief_value += difficulty_score * 0.25
             
-            # Cap belief value at 1.0
+            # Cap belief value at 1.0 (sin escribir en BD)
             belief_value = min(1.0, max(0.0, belief_value))
-            
-            # Store belief value in database
-            query = """
-                UPDATE game_attempts 
-                SET feedback_belief = %s 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (belief_value, game_id)
-            
-            return self.safe_execute_query(query, params)
+            self.values = {"belief_value": belief_value, **metrics}
+            return True
             
         except Exception as e:
             self.logger.error(f"Error updating feedback belief values: {e}")
@@ -160,8 +152,12 @@ class FeedbackController(BeliefController):
         """Calculate difficulty adaptation score."""
         score = 0.0
         
-        # Skill level assessment
-        skill_level = calculate_player_skill_level(metrics['game_id'], self.db_client)
+        # Skill level assessment (usar game_id externo si está disponible en metrics)
+        game_id_val = metrics.get('game_id') if isinstance(metrics, dict) else None
+        try:
+            skill_level = calculate_player_skill_level(game_id_val, self.db_client) if game_id_val else 0.5
+        except Exception:
+            skill_level = 0.5
         
         if skill_level >= 0.8:
             score += 1.0  # Ready for harder challenges
@@ -187,40 +183,40 @@ class FeedbackController(BeliefController):
             SpeechResponse with personalized feedback
         """
         try:
-            # Get current belief value and metrics
-            query = """
-                SELECT feedback_belief, difficulty_id 
-                FROM game_attempts 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (game_id,)
-            result = self.db_client.fetch_results(query, params)
-            
-            if not result:
-                return SpeechResponse(
-                    message="No se pudo obtener información del juego para generar feedback.",
-                    belief_value=0.0
-                )
-            
-            belief_value = result[0].get('feedback_belief', 0.0)
-            difficulty_id = result[0].get('difficulty_id', 1)
-            
-            # Get current metrics for context
+            # Recalcular belief_value y contexto en memoria (sin BD)
             metrics = get_game_progress(game_id, self.db_client)
+            belief_value = 0.0
+            performance_score = self._calculate_performance_score(metrics)
+            belief_value += performance_score * 0.3
+            learning_score = self._calculate_learning_score(metrics)
+            belief_value += learning_score * 0.25
+            engagement_score = self._calculate_engagement_score(metrics)
+            belief_value += engagement_score * 0.2
+            difficulty_score = self._calculate_difficulty_score(metrics)
+            belief_value += difficulty_score * 0.25
+            belief_value = min(1.0, max(0.0, belief_value))
+
+            # Obtener dificultad actual sin columnas de creencias
+            difficulty_id = 1
+            try:
+                res = self.db_client.fetch_results(
+                    "SELECT difficulty_id FROM game_attempts WHERE game_id = %s AND is_active = TRUE",
+                    (game_id,)
+                )
+                if res:
+                    difficulty_id = int(res[0].get('difficulty_id', 1))
+            except Exception:
+                difficulty_id = 1
             
             # Generate personalized feedback message
             message = self._generate_feedback_message(belief_value, metrics, difficulty_id)
             
-            return SpeechResponse(
-                message=message,
-                belief_value=belief_value
-            )
+            return SpeechResponse.create_encouragement(message)
             
         except Exception as e:
             self.logger.error(f"Error in feedback action: {e}")
-            return SpeechResponse(
-                message="Ocurrió un error al generar el feedback personalizado.",
-                belief_value=0.0
+            return SpeechResponse.create_encouragement(
+                "Ocurrió un error al generar el feedback personalizado."
             )
     
     def _generate_feedback_message(self, belief_value: float, metrics: Dict[str, Any], difficulty_id: int) -> str:

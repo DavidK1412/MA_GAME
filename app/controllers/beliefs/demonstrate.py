@@ -4,7 +4,7 @@ Demonstrate belief controller for showing players how to solve game situations.
 
 from typing import Any, Dict, List, Optional
 from controllers.base import BeliefController
-from domain.models.response import SpeechResponse, GameResponse
+from domain.models.response import SpeechResponse, GameResponse, Response, ResponseType
 from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
 from utils.graph_utils import best_next_move, possible_moves, is_game_winnable
 
@@ -64,18 +64,10 @@ class DemonstrateController(BeliefController):
             if not self._is_current_state_winnable(game_id):
                 belief_value += 0.2
             
-            # Cap belief value at 1.0
+            # Cap belief value at 1.0 (sin escribir en BD)
             belief_value = min(1.0, belief_value)
-            
-            # Store belief value in database
-            query = """
-                UPDATE game_attempts 
-                SET demonstrate_belief = %s 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (belief_value, game_id)
-            
-            return self.safe_execute_query(query, params)
+            self.values = {"belief_value": belief_value, **metrics}
+            return True
             
         except Exception as e:
             self.logger.error(f"Error updating demonstrate belief values: {e}")
@@ -122,8 +114,8 @@ class DemonstrateController(BeliefController):
             blocks_per_team = difficulty['blocks_per_team']
             final_state = difficulty['final_state']
             
-            # Check if current state is winnable
-            return is_game_winnable(blocks_per_team, blocks_per_team, current_state, final_state)
+            # Check if current state is winnable (usar firma de 2 argumentos)
+            return is_game_winnable(current_state, final_state)
             
         except Exception as e:
             self.logger.error(f"Error checking if state is winnable: {e}")
@@ -137,50 +129,79 @@ class DemonstrateController(BeliefController):
             game_id: Game identifier
             
         Returns:
-            SpeechResponse with demonstration message
+            Response BEST_NEXT cuando sea posible, o SPEECH como fallback
         """
         try:
-            # Get current belief value and game state
-            query = """
-                SELECT demonstrate_belief, difficulty_id 
-                FROM game_attempts 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (game_id,)
-            result = self.db_client.fetch_results(query, params)
-            
-            if not result:
-                return SpeechResponse(
-                    message="No se pudo obtener información del juego para demostrar.",
-                    belief_value=0.0
+            # Recalcular belief_value en memoria y obtener dificultad (sin columnas de creencias)
+            metrics = get_game_progress(game_id, self.db_client)
+            belief_value = 0.0
+            if metrics['tries_count'] > 20:
+                belief_value += 0.4
+            elif metrics['tries_count'] > 15:
+                belief_value += 0.3
+            elif metrics['tries_count'] > 10:
+                belief_value += 0.2
+            if metrics['misses_count'] > 8:
+                belief_value += 0.3
+            elif metrics['misses_count'] > 5:
+                belief_value += 0.2
+            if metrics['buclicity'] > 7:
+                belief_value += 0.2
+            skill_level = calculate_player_skill_level(game_id, self.db_client)
+            if skill_level < 0.2:
+                belief_value += 0.3
+            elif skill_level < 0.4:
+                belief_value += 0.2
+            if not self._is_current_state_winnable(game_id):
+                belief_value += 0.2
+            belief_value = min(1.0, belief_value)
+
+            difficulty_id = 1
+            try:
+                res = self.db_client.fetch_results(
+                    "SELECT difficulty_id FROM game_attempts WHERE game_id = %s AND is_active = TRUE",
+                    (game_id,)
                 )
-            
-            belief_value = result[0].get('demonstrate_belief', 0.0)
-            difficulty_id = result[0].get('difficulty_id', 1)
+                if res:
+                    difficulty_id = int(res[0].get('difficulty_id', 1))
+            except Exception:
+                difficulty_id = 1
             
             # Get current game state
             current_state = self._get_current_game_state(game_id)
             if not current_state:
-                return SpeechResponse(
-                    message="No se pudo obtener el estado actual del juego.",
-                    belief_value=belief_value
+                return SpeechResponse.create_encouragement(
+                    "No se pudo obtener el estado actual del juego."
                 )
             
-            # Generate demonstration message
+            # Intentar devolver siempre el mejor siguiente movimiento como BEST_NEXT
+            difficulty_configs = {
+                1: {"blocks_per_team": 3, "final_state": [6, 5, 4, 0, 1, 2, 3]},
+                2: {"blocks_per_team": 4, "final_state": [8, 7, 6, 5, 0, 1, 2, 3, 4]},
+                3: {"blocks_per_team": 5, "final_state": [10, 9, 8, 7, 6, 0, 1, 2, 3, 4, 5]}
+            }
+            final_state = difficulty_configs.get(difficulty_id, {}).get('final_state')
+            if final_state:
+                optimal_move = best_next_move(current_state, final_state)
+                if optimal_move is not None:
+                    return Response(
+                        type=ResponseType.BEST_NEXT,
+                        actions={
+                            "text": "Este es el movimiento correcto",
+                            "best_next": optimal_move
+                        }
+                    )
+
+            # Fallback: mensaje explicativo
             message = self._generate_demonstration_message(
                 belief_value, current_state, difficulty_id, game_id
             )
-            
-            return SpeechResponse(
-                message=message,
-                belief_value=belief_value
-            )
+            return SpeechResponse.create_encouragement(message)
             
         except Exception as e:
             self.logger.error(f"Error in demonstrate action: {e}")
-            return SpeechResponse(
-                message="Ocurrió un error al generar la demostración.",
-                belief_value=0.0
+            return SpeechResponse.create_encouragement(
+                "Ocurrió un error al generar la demostración."
             )
     
     def _get_current_game_state(self, game_id: str) -> Optional[List[int]]:

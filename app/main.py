@@ -29,52 +29,29 @@ setup_logging(settings.LOG_LEVEL, settings.LOG_FILE)
 logger = get_logger(__name__)
 
 # Global variables for controllers
-game_controller = None
-decision_controller = None
 
+    # Validate configuration
+settings.validate_config()
+logger.info("Configuration validated successfully")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
-    # Startup
-    logger.info("Starting Frog Game API...")
-    
-    try:
-        # Validate configuration
-        settings.validate_config()
-        logger.info("Configuration validated successfully")
-        
-        # Initialize database connection
-        global game_controller, decision_controller
-        
-        db = DatabaseClient(**settings.get_database_config())
-        db.connect()
-        logger.info("Database connection established")
-        
-        # Initialize controllers
-        game_controller = GameController(db)
-        
-        beliefs = [
-            DemonstrateController(db, "Demonstrate"),
-            AdviceController(db, "Advice"),
-            FeedbackController(db, "Feedback"),
-            ExplainController(db, "Explain"),
-            AskController(db, "Ask")
-        ]
-        decision_controller = DecisionController(beliefs, settings.__dict__)
-        
-        logger.info("Controllers initialized successfully")
-        
-        yield
-        
-    except Exception as e:
-        logger.error(f"Startup failed: {e}")
-        raise
-    finally:
-        # Shutdown
-        logger.info("Shutting down Frog Game API...")
-        if 'db' in locals():
-            db.close()
+db = DatabaseClient(**settings.get_database_config())
+db.connect()
+logger.info("Database connection established")
+
+    # Initialize controllers
+game_controller = GameController(db)
+
+beliefs = [
+    DemonstrateController(db, "Demonstrate"),
+    AdviceController(db, "Advice"),
+    FeedbackController(db, "Feedback"),
+    ExplainController(db, "Explain"),
+    AskController(db, "Ask")
+]
+decision_controller = DecisionController(beliefs, settings.__dict__)
+
+logger.info("Controllers initialized successfully")
+
 
 
 # Create FastAPI app
@@ -82,7 +59,6 @@ app = FastAPI(
     title=settings.API_TITLE,
     version=settings.API_VERSION,
     description=settings.API_DESCRIPTION,
-    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -146,25 +122,37 @@ async def new_game(game: GameType):
 @app.post("/game/{game_id}")
 async def move(game_id: str, movement: MovementRequestType):
     """Process a game move."""
+    logger.info(f"Processing move for game {game_id}: {movement.movement}")
     try:
-        game_controller.start_attempt(game_id, movement)
-        
-        if game_controller.move(game_id, movement, settings.__dict__):
-            # Check if decision should be made
-            tries = _get_tries_count(game_id)
-            if tries % settings.DECISION_INTERVAL == 0 and tries != 0:
+        logger.info(f"Processing move for game {game_id}: {movement.movement}")
+        logger.info(game_controller)
+
+        result = game_controller.move(game_id, movement, settings.__dict__)
+        # Si el controlador devuelve un Response (por ejemplo, cambio de dificultad), responder de inmediato
+        if isinstance(result, Response):
+            return JSONResponse(content=result.dict(), status_code=200)
+
+        if result:
+            # Evaluar y loggear creencias SIEMPRE para debug
+            try:
+                decision_controller.evaluate_beliefs(game_id)
+            except Exception as e:
+                logger.error(f"Error evaluating beliefs for debug: {e}")
+
+            # Siempre ejecutar decisión y devolver respuesta de la creencia ganadora
+            try:
                 selected_belief = decision_controller.make_decision(game_id)
                 response = selected_belief.action(game_id)
                 return JSONResponse(
                     content=response.dict() if isinstance(response, Response) else response,
                     status_code=200
                 )
-            
-            # Return motivational message
-            return JSONResponse(
-                content=_get_random_motivational_message().dict(),
-                status_code=200
-            )
+            except Exception as e:
+                logger.error(f"Error executing belief action: {e}")
+                return JSONResponse(
+                    content=_get_random_motivational_message().dict(),
+                    status_code=200
+                )
                 
     except GameCompletedError as e:
         return _handle_game_completion(e)
@@ -249,12 +237,10 @@ def _get_random_motivational_message() -> SpeechResponse:
 def _get_tries_count(game_id: str) -> int:
     """Get the number of tries for a game."""
     try:
-        # This would need to be implemented in the utils
-        # For now, returning a default value
-        return 1
+        return game_controller.get_tries_count(game_id)
     except Exception as e:
         logger.error(f"Error getting tries count: {e}")
-        return 1
+        return 0
 
 
 if __name__ == "__main__":

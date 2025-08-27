@@ -271,13 +271,24 @@ def best_next_move(initial_state: List[int], goal_state: List[int]) -> Optional[
         
         if not graph_dict:
             logger.warning("No graph could be built")
-            return None
+            # Fallback: elegir mejor vecino por heurística
+            neighbors = generate_neighbors_wrapper(initial_state)
+            if not neighbors:
+                logger.info("No neighbors available from current state")
+                return None
+            best = min(neighbors, key=lambda s: sum(1 for a, b in zip(s, goal_state) if a != b))
+            return best
             
         # Create NetworkX graph
         G = nx.DiGraph()
+        # Asegurar nodos aún si no tienen aristas salientes
+        G.add_nodes_from(graph_dict.keys())
         for state, neighbors in graph_dict.items():
             for neighbor in neighbors:
                 G.add_edge(state, neighbor)
+        # Asegurar presencia explícita de source y target
+        G.add_node(tuple(initial_state))
+        G.add_node(tuple(goal_state))
 
         # Find shortest path
         try:
@@ -294,10 +305,22 @@ def best_next_move(initial_state: List[int], goal_state: List[int]) -> Optional[
                 
         except nx.NetworkXNoPath:
             logger.info("No path found to goal state")
-            return None
+            # Fallback: elegir mejor vecino por heurística
+            neighbors = generate_neighbors_wrapper(initial_state)
+            if not neighbors:
+                logger.info("No neighbors available from current state")
+                return None
+            best = min(neighbors, key=lambda s: sum(1 for a, b in zip(s, goal_state) if a != b))
+            return best
         except Exception as e:
             logger.error(f"Error finding shortest path: {e}")
-            return None
+            # Fallback: elegir mejor vecino por heurística
+            neighbors = generate_neighbors_wrapper(initial_state)
+            if not neighbors:
+                logger.info("No neighbors available from current state")
+                return None
+            best = min(neighbors, key=lambda s: sum(1 for a, b in zip(s, goal_state) if a != b))
+            return best
             
     except Exception as e:
         logger.error(f"Error in best_next_move: {e}")

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import logging
 from .graph_utils import possible_moves, shortest_path_length, calculate_game_complexity, is_game_winnable
+from time import time
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,21 @@ logger = logging.getLogger(__name__)
 class IncentiveScriptsError(Exception):
     """Custom exception for incentive scripts errors."""
     pass
+_METRICS_CACHE: Dict[str, Dict[str, Any]] = {}
+_METRICS_TTL_SECONDS: float = 2.0
+
+def _cache_get(game_id: str) -> Optional[Dict[str, Any]]:
+    item = _METRICS_CACHE.get(game_id)
+    if not item:
+        return None
+    if time() - item.get("ts", 0) > _METRICS_TTL_SECONDS:
+        _METRICS_CACHE.pop(game_id, None)
+        return None
+    return item.get("data")
+
+def _cache_set(game_id: str, data: Dict[str, Any]) -> None:
+    _METRICS_CACHE[game_id] = {"ts": time(), "data": data}
+
 
 
 def get_actual_attempt_id(game_id: str, db_client) -> Optional[str]:
@@ -77,10 +93,16 @@ def get_average_time_between_state_change(game_id: str, db_client) -> float:
                 time1 = result[i-1]['movement_time']
                 time2 = result[i]['movement_time']
                 
+                # Normalizar a datetime
                 if isinstance(time1, str):
                     time1 = datetime.fromisoformat(time1.replace('Z', '+00:00'))
                 if isinstance(time2, str):
                     time2 = datetime.fromisoformat(time2.replace('Z', '+00:00'))
+                # Si vienen como datetime.time, convertir a datetime de hoy
+                if hasattr(time1, 'hour') and not hasattr(time1, 'year'):
+                    time1 = datetime.combine(datetime.today().date(), time1)
+                if hasattr(time2, 'hour') and not hasattr(time2, 'year'):
+                    time2 = datetime.combine(datetime.today().date(), time2)
                     
                 time_diff = time2 - time1
                 total_time_diff += time_diff
@@ -401,6 +423,10 @@ def get_game_progress(game_id: str, db_client) -> Dict[str, Any]:
         Dictionary with all game metrics
     """
     try:
+        # Cache de métricas para evitar consultas repetidas en ventanas cortas
+        cached = _cache_get(game_id)
+        if cached is not None:
+            return cached
         metrics = {
             'tries_count': get_tries_count(game_id, db_client),
             'misses_count': get_misses_count(game_id, db_client),
@@ -410,7 +436,7 @@ def get_game_progress(game_id: str, db_client) -> Dict[str, Any]:
             'average_time': get_average_time_between_state_change(game_id, db_client),
             'correct_moves': get_number_of_assertions(game_id, db_client)
         }
-        
+        _cache_set(game_id, metrics)
         logger.debug(f"Game progress metrics calculated: {metrics}")
         return metrics
         

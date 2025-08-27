@@ -17,7 +17,7 @@ class MovementType(str, Enum):
 
 class MovementRequestType(BaseModel):
     """Movement request model."""
-    movement: List[int] = Field(..., description="List of integers representing the game state")
+    movement: list[int]
     
     @validator('movement')
     def validate_movement(cls, v):

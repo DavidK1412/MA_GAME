@@ -78,6 +78,7 @@ class DatabaseClient:
         
         try:
             self.cursor.execute(query, params)
+            logger.info(f"Query executed successfully: {query}")
             logger.debug(f"Query executed successfully: {query[:100]}...")
         except psycopg2.DatabaseError as e:
             logger.error(f"Query execution failed: {e}")

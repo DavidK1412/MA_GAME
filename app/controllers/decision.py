@@ -40,6 +40,17 @@ class DecisionController(BaseController):
             if not evaluated_beliefs:
                 raise BeliefEvaluationError("No beliefs could be evaluated successfully")
             
+            # Log consolidado de valores por creencia
+            try:
+                resumen = ", ".join([f"{b['name']}={b['value']:.4f}" for b in evaluated_beliefs])
+                self.logger.info(f"Valores de creencias para juego {game_id}: {resumen}")
+            except Exception:
+                # Fallback en caso de tipos no numéricos
+                self.logger.info({
+                    "game_id": game_id,
+                    "belief_values": [{"name": b.get('name'), "value": b.get('value')} for b in evaluated_beliefs]
+                })
+
             self.logger.info(f"Successfully evaluated {len(evaluated_beliefs)} beliefs")
             return evaluated_beliefs
             
@@ -55,10 +66,33 @@ class DecisionController(BaseController):
             if not evaluated_beliefs:
                 raise BeliefEvaluationError("No beliefs available for decision making")
             
-            # Select belief with highest value
-            best_belief = max(evaluated_beliefs, key=lambda x: x['value'])
+            # Tie-break priority: Demonstrate > Ask > Explain > Advice > Feedback
+            priority = {
+                'Demonstrate': 0,
+                'Ask': 1,
+                'Explain': 2,
+                'Advice': 3,
+                'Feedback': 4,
+            }
+            # Select belief with highest value; on tie, use priority
+            best_belief = min(
+                evaluated_beliefs,
+                key=lambda x: (-float(x['value']), priority.get(x['name'], 99))
+            )
             
             self.logger.info(f"Selected belief {best_belief['name']} with value {best_belief['value']}")
+            # Log explícito del ganador (para debug claro en español)
+            try:
+                self.logger.info(
+                    {
+                        "event": "belief_winner",
+                        "game_id": game_id,
+                        "winner": best_belief['name'],
+                        "value": float(best_belief['value'])
+                    }
+                )
+            except Exception:
+                self.logger.info(f"Belief winner: {best_belief['name']} (value={best_belief['value']})")
             
             return best_belief['belief']
             
@@ -71,8 +105,18 @@ class DecisionController(BaseController):
         try:
             evaluated_beliefs = self.evaluate_beliefs(game_id)
             
-            # Sort by value in descending order
-            ranked_beliefs = sorted(evaluated_beliefs, key=lambda x: x['value'], reverse=True)
+            # Sort by value desc with tie-break priority
+            priority = {
+                'Demonstrate': 0,
+                'Ask': 1,
+                'Explain': 2,
+                'Advice': 3,
+                'Feedback': 4,
+            }
+            ranked_beliefs = sorted(
+                evaluated_beliefs,
+                key=lambda x: (-float(x['value']), priority.get(x['name'], 99))
+            )
             
             self.logger.info(f"Belief ranking generated for game {game_id}")
             return ranked_beliefs

@@ -12,6 +12,7 @@ class ResponseType(str, Enum):
     STATUS = "status"
     GAME_CREATED = "game_created"
     SPEECH = "SPEECH"
+    ASK = "ASK"
     CHANGE_DIFF = "CHANGE_DIFF"
     BEST_NEXT = "BEST_NEXT"
     ERROR = "error"

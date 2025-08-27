@@ -3,8 +3,9 @@ Ask belief controller for engaging players with interactive questions.
 """
 
 from typing import Any, Dict, List, Optional
+import random
 from controllers.base import BeliefController
-from domain.models.response import SpeechResponse, GameResponse
+from domain.models.response import SpeechResponse, GameResponse, Response, ResponseType
 from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
 
 
@@ -31,47 +32,27 @@ class AskController(BeliefController):
             # Get game progress metrics
             metrics = get_game_progress(game_id, self.db_client)
             
-            # Calculate belief value based on engagement needs
+            # Calculate belief value based on engagement needs (sin escribir en BD)
             belief_value = 0.0
-            
-            # Factor 1: Low engagement suggests need for questions
             avg_time = metrics['average_time']
-            if avg_time > 60:  # More than 1 minute between moves
+            if avg_time > 60:
                 belief_value += 0.3
-            elif avg_time > 30:  # More than 30 seconds
+            elif avg_time > 30:
                 belief_value += 0.2
-            
-            # Factor 2: High tries with low progress suggests confusion
             if metrics['tries_count'] > 15 and metrics['correct_moves'] < metrics['tries_count'] * 0.3:
                 belief_value += 0.3
-            
-            # Factor 3: Low skill level needs more guidance
             skill_level = calculate_player_skill_level(game_id, self.db_client)
             if skill_level < 0.3:
                 belief_value += 0.3
             elif skill_level < 0.5:
                 belief_value += 0.2
-            
-            # Factor 4: High buclicity suggests need for reflection
             if metrics['buclicity'] > 5:
                 belief_value += 0.2
-            
-            # Factor 5: Check if player has been inactive
             if self._is_player_inactive(game_id):
                 belief_value += 0.2
-            
-            # Cap belief value at 1.0
             belief_value = min(1.0, belief_value)
-            
-            # Store belief value in database
-            query = """
-                UPDATE game_attempts 
-                SET ask_belief = %s 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (belief_value, game_id)
-            
-            return self.safe_execute_query(query, params)
+            self.values = {"belief_value": belief_value, **metrics}
+            return True
             
         except Exception as e:
             self.logger.error(f"Error updating ask belief values: {e}")
@@ -95,12 +76,12 @@ class AskController(BeliefController):
                 return False
             
             last_move_time = result[0]['movement_time']
-            
-            # Check if last move was more than 5 minutes ago
-            from datetime import datetime, timezone
+            from datetime import datetime, timezone, date
             if isinstance(last_move_time, str):
                 last_move_time = datetime.fromisoformat(last_move_time.replace('Z', '+00:00'))
-            
+            # Si es datetime.time, combínalo con la fecha actual
+            if hasattr(last_move_time, 'hour') and not hasattr(last_move_time, 'year'):
+                last_move_time = datetime.combine(date.today(), last_move_time).replace(tzinfo=timezone.utc)
             current_time = datetime.now(timezone.utc)
             time_diff = current_time - last_move_time
             
@@ -121,40 +102,61 @@ class AskController(BeliefController):
             SpeechResponse with interactive question
         """
         try:
-            # Get current belief value and game context
-            query = """
-                SELECT ask_belief, difficulty_id 
-                FROM game_attempts 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (game_id,)
-            result = self.db_client.fetch_results(query, params)
-            
-            if not result:
-                return SpeechResponse(
-                    message="No se pudo obtener información del juego para generar preguntas.",
-                    belief_value=0.0
-                )
-            
-            belief_value = result[0].get('ask_belief', 0.0)
-            difficulty_id = result[0].get('difficulty_id', 1)
-            
-            # Get current metrics for context
+            # Recalcular belief_value y contexto en memoria (sin BD)
             metrics = get_game_progress(game_id, self.db_client)
+            belief_value = 0.0
+            avg_time = metrics['average_time']
+            if avg_time > 60:
+                belief_value += 0.3
+            elif avg_time > 30:
+                belief_value += 0.2
+            if metrics['tries_count'] > 15 and metrics['correct_moves'] < metrics['tries_count'] * 0.3:
+                belief_value += 0.3
+            skill_level = calculate_player_skill_level(game_id, self.db_client)
+            if skill_level < 0.3:
+                belief_value += 0.3
+            elif skill_level < 0.5:
+                belief_value += 0.2
+            if metrics['buclicity'] > 5:
+                belief_value += 0.2
+            if self._is_player_inactive(game_id):
+                belief_value += 0.2
+            belief_value = min(1.0, belief_value)
+
+            # Obtener dificultad actual sin columnas de creencias
+            from typing import Optional
+            difficulty_id: int = 1
+            try:
+                res = self.db_client.fetch_results(
+                    "SELECT difficulty_id FROM game_attempts WHERE game_id = %s AND is_active = TRUE",
+                    (game_id,)
+                )
+                if res:
+                    difficulty_id = int(res[0].get('difficulty_id', 1))
+            except Exception:
+                difficulty_id = 1
             
-            # Generate appropriate question based on belief value
-            message = self._generate_question_message(belief_value, metrics, difficulty_id, game_id)
-            
-            return SpeechResponse(
-                message=message,
-                belief_value=belief_value
+            # Pregunta simple de ofrecimiento de ayuda (variaciones)
+            help_prompts = [
+                "¿Necesitas ayuda con el siguiente movimiento?",
+                "¿Quieres que te ayude ahora?",
+                "¿Te muestro una pista para el próximo paso?",
+                "¿Prefieres recibir ayuda en este momento?",
+                "¿Deseas asistencia para continuar?",
+            ]
+            message = random.choice(help_prompts)
+
+            # Ser fiel a DecisionCenter: devolver tipo ASK con texto directo
+            return Response(
+                type=ResponseType.ASK,
+                actions={"text": message}
             )
             
         except Exception as e:
             self.logger.error(f"Error in ask action: {e}")
-            return SpeechResponse(
-                message="Ocurrió un error al generar la pregunta interactiva.",
-                belief_value=0.0
+            return Response(
+                type=ResponseType.ASK,
+                actions={"text": "Ocurrió un error al generar la pregunta interactiva."}
             )
     
     def _generate_question_message(

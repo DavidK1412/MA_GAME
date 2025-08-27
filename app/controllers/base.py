@@ -46,7 +46,9 @@ class BaseController(ABC):
         """Safely execute a database query with error handling."""
         try:
             self.validate_database_connection()
-            self.db_client.execute_query(query, params)
+            # Ensure writes are committed by using an explicit transaction
+            with self.db_client.transaction():
+                self.db_client.execute_query(query, params)
             self.log_operation("database_query_executed", {"query": query[:100]})
             return True
         except Exception as e:
@@ -88,19 +90,24 @@ class BeliefController(BaseController):
             if not self.update_values(game_id, config):
                 raise ValueError(f'Error updating values for belief {self.name}')
             
-            belief_config = config['agents'].get(self.name)
-            if not belief_config:
-                raise ValueError(f'Belief {self.name} not found in config')
+            # Configuración de la creencia (tolerante si no existe 'agents')
+            belief_config = None
+            try:
+                agents_cfg = config.get('agents') if isinstance(config, dict) else None
+                if isinstance(agents_cfg, dict):
+                    belief_config = agents_cfg.get(self.name)
+            except Exception:
+                belief_config = None
             
-            equation = belief_config.get('Equation')
-            if not equation:
-                raise ValueError(f'No equation found for belief {self.name}')
+            equation = None
+            if isinstance(belief_config, dict):
+                equation = belief_config.get('Equation')
             
             # Import here to avoid circular imports
             from utils.equation_utils import evaluate_equation, replace_placeholders_in_equation
             
-            weights = belief_config.get('Weights', {})
-            standardization = belief_config.get('Standardization', {})
+            weights = belief_config.get('Weights', {}) if isinstance(belief_config, dict) else {}
+            standardization = belief_config.get('Standardization', {}) if isinstance(belief_config, dict) else {}
             
             # Normalize values
             normalized_values = {}
@@ -108,10 +115,29 @@ class BeliefController(BaseController):
                 max_value = standardization.get(f"{var}_max", 1)
                 normalized_values[var] = value / max_value if max_value > 0 else 0
             
-            context = {**weights, **normalized_values}
-            processed_equation = replace_placeholders_in_equation(equation, context)
-            
-            result = evaluate_equation(processed_equation, context)
+            # Si no hay ecuación, usar fallback (promedio de valores normalizados)
+            if not equation:
+                result = sum(normalized_values.values()) / max(1, len(normalized_values))
+                processed_equation = "fallback_average_normalized_values"
+                self.log_operation("belief_evaluated_fallback", {
+                    "belief": self.name,
+                    "normalized_values": normalized_values,
+                    "result": result
+                })
+            else:
+                context = {**weights, **normalized_values}
+                processed_equation = replace_placeholders_in_equation(equation, context)
+                result = evaluate_equation(processed_equation, context)
+            # Log detallado de creencias: valores crudos, normalizados, pesos y resultado
+            self.log_operation("belief_values", {
+                "belief": self.name,
+                "raw_values": self.values,
+                "normalized_values": normalized_values,
+                "weights": weights,
+                "equation": equation,
+                "processed_equation": processed_equation,
+                "result": result
+            })
             self.log_operation("belief_evaluated", {
                 "belief": self.name,
                 "values": self.values,

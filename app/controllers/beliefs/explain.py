@@ -4,7 +4,7 @@ Explain belief controller for providing explanations to players.
 
 from typing import Any, Dict
 from controllers.base import BeliefController
-from domain.models.response import SpeechResponse
+from domain.models.response import SpeechResponse, Response, ResponseType
 from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
 
 
@@ -62,22 +62,14 @@ class ExplainController(BeliefController):
             
             # Cap belief value at 1.0
             belief_value = min(1.0, belief_value)
-            
-            # Store belief value in database
-            query = """
-                UPDATE game_attempts 
-                SET explain_belief = %s 
-                WHERE game_id = %s AND is_active = TRUE
-            """
-            params = (belief_value, game_id)
-            
-            return self.safe_execute_query(query, params)
+            self.values = {"belief_value": belief_value, **metrics}
+            return True
             
         except Exception as e:
             self.logger.error(f"Error updating explain belief values: {e}")
             return False
     
-    def action(self, game_id: str) -> SpeechResponse:
+    def action(self, game_id: str) -> Response:
         """
         Provide explanation action based on belief evaluation.
         
@@ -88,19 +80,40 @@ class ExplainController(BeliefController):
             SpeechResponse with explanation message
         """
         try:
-            # Get current belief value
-            query = "SELECT explain_belief FROM game_attempts WHERE game_id = %s AND is_active = TRUE"
-            params = (game_id,)
-            result = self.db_client.fetch_results(query, params)
+            # Recalcular belief_value en memoria (sin BD)
+            metrics = get_game_progress(game_id, self.db_client)
+            belief_value = 0.0
+            if metrics['tries_count'] > 15:
+                belief_value += 0.4
+            elif metrics['tries_count'] > 10:
+                belief_value += 0.3
+            elif metrics['tries_count'] > 5:
+                belief_value += 0.2
+            if metrics['misses_count'] > 5:
+                belief_value += 0.3
+            elif metrics['misses_count'] > 2:
+                belief_value += 0.2
+            if metrics['buclicity'] > 5:
+                belief_value += 0.2
+            skill_level = calculate_player_skill_level(game_id, self.db_client)
+            if skill_level < 0.3:
+                belief_value += 0.3
+            elif skill_level < 0.6:
+                belief_value += 0.2
+            belief_value = min(1.0, belief_value)
             
-            if not result:
-                return SpeechResponse(
-                    message="No se pudo obtener información del juego para explicar.",
-                    belief_value=0.0
+            # Obtener dificultad actual sin columnas de creencias
+            difficulty_id = 1
+            try:
+                res = self.db_client.fetch_results(
+                    "SELECT difficulty_id FROM game_attempts WHERE game_id = %s AND is_active = TRUE",
+                    (game_id,)
                 )
-            
-            belief_value = result[0].get('explain_belief', 0.0)
-            
+                if res:
+                    difficulty_id = int(res[0].get('difficulty_id', 1))
+            except Exception:
+                difficulty_id = 1
+
             # Generate explanation based on belief value
             if belief_value > 0.7:
                 message = (
@@ -120,14 +133,11 @@ class ExplainController(BeliefController):
                     "Continúa así y pronto completarás el nivel."
                 )
             
-            return SpeechResponse(
-                message=message,
-                belief_value=belief_value
-            )
+            # Ser más fiel: devolver explicación como SPEECH explícito
+            return SpeechResponse.create_rule_reminder(message)
             
         except Exception as e:
             self.logger.error(f"Error in explain action: {e}")
-            return SpeechResponse(
-                message="Ocurrió un error al generar la explicación.",
-                belief_value=0.0
+            return SpeechResponse.create_rule_reminder(
+                "Ocurrió un error al generar la explicación."
             )
