@@ -155,14 +155,38 @@ async def move(game_id: str, movement: MovementRequestType):
                 else:
                     logger.info(f"✅ RESPUESTA GENERADA: {type(response).__name__} - {selected_belief.name}")
                 
+                # Preparar contenido JSON para envío
+                json_content = response.dict() if isinstance(response, Response) else response
+                
+                # Log detallado del JSON que se envía
+                import json
+                try:
+                    json_str = json.dumps(json_content, indent=2, ensure_ascii=False)
+                    logger.info(f"📤 JSON ENVIADO AL JUEGO:\n{json_str}")
+                except Exception as e:
+                    logger.warning(f"Error serializando JSON para log: {e}")
+                    logger.info(f"📤 CONTENIDO ENVIADO: {json_content}")
+                
                 return JSONResponse(
-                    content=response.dict() if isinstance(response, Response) else response,
+                    content=json_content,
                     status_code=200
                 )
             except Exception as e:
                 logger.error(f"Error executing belief action: {e}")
+                fallback_response = _get_random_motivational_message()
+                fallback_content = fallback_response.dict()
+                
+                # Log del JSON de fallback
+                import json
+                try:
+                    json_str = json.dumps(fallback_content, indent=2, ensure_ascii=False)
+                    logger.info(f"📤 JSON FALLBACK ENVIADO:\n{json_str}")
+                except Exception as json_e:
+                    logger.warning(f"Error serializando JSON fallback: {json_e}")
+                    logger.info(f"📤 CONTENIDO FALLBACK: {fallback_content}")
+                
                 return JSONResponse(
-                    content=_get_random_motivational_message().dict(),
+                    content=fallback_content,
                     status_code=200
                 )
                 
@@ -183,11 +207,22 @@ async def miss(game_id: str):
         miss_count = game_controller.miss(game_id)
         logger.info(f"Miss recorded for game {game_id}, count: {miss_count}")
         
+        response_content = Response(
+            type=ResponseType.MISS,
+            actions={"game_id": game_id, "miss_count": miss_count}
+        ).dict()
+        
+        # Log del JSON de miss
+        import json
+        try:
+            json_str = json.dumps(response_content, indent=2, ensure_ascii=False)
+            logger.info(f"📤 JSON MISS ENVIADO:\n{json_str}")
+        except Exception as e:
+            logger.warning(f"Error serializando JSON de miss: {e}")
+            logger.info(f"📤 CONTENIDO MISS: {response_content}")
+        
         return JSONResponse(
-            content=Response(
-                type=ResponseType.MISS,
-                actions={"game_id": game_id, "miss_count": miss_count}
-            ).dict(),
+            content=response_content,
             status_code=200
         )
     except Exception as e:
@@ -200,7 +235,18 @@ async def best_next(game_id: str):
     """Get the best next move for a game."""
     try:
         response = game_controller.get_best_next(game_id)
-        return JSONResponse(content=response.dict(), status_code=200)
+        response_content = response.dict()
+        
+        # Log del JSON de best_next
+        import json
+        try:
+            json_str = json.dumps(response_content, indent=2, ensure_ascii=False)
+            logger.info(f"📤 JSON BEST_NEXT ENVIADO:\n{json_str}")
+        except Exception as e:
+            logger.warning(f"Error serializando JSON de best_next: {e}")
+            logger.info(f"📤 CONTENIDO BEST_NEXT: {response_content}")
+        
+        return JSONResponse(content=response_content, status_code=200)
     except Exception as e:
         logger.error(f"Error getting best next move: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -216,8 +262,19 @@ def _handle_game_completion(completion_type: GameCompletedError) -> JSONResponse
     
     message = completion_messages.get(str(completion_type), "¡Buen trabajo!")
     
+    response_content = SpeechResponse.create_encouragement(message).dict()
+    
+    # Log del JSON de finalización de juego
+    import json
+    try:
+        json_str = json.dumps(response_content, indent=2, ensure_ascii=False)
+        logger.info(f"📤 JSON FINALIZACIÓN DE JUEGO:\n{json_str}")
+    except Exception as e:
+        logger.warning(f"Error serializando JSON de finalización: {e}")
+        logger.info(f"📤 CONTENIDO FINALIZACIÓN: {response_content}")
+    
     return JSONResponse(
-        content=SpeechResponse.create_encouragement(message).dict(),
+        content=response_content,
         status_code=200
     )
 
