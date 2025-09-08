@@ -85,15 +85,23 @@ def is_valid_move(state: List[int], i: int, j: int, total_left: int, total_right
         # Left frog moving right
         if direction > 0 and is_left_frog(frog, total_left):
             if abs(direction) == 2:  # Jump
-                if i + 1 < len(state) and is_left_frog(state[i + 1], total_left):
-                    return False  # Can't jump over own team
+                # Para saltar, debe haber una rana del equipo contrario en la posición intermedia
+                middle_pos = i + 1
+                if middle_pos < len(state) and not is_left_frog(state[middle_pos], total_left) and state[middle_pos] != 0:
+                    return True  # Can jump over opposite team
+                else:
+                    return False  # Can't jump over empty space or own team
             return True
 
         # Right frog moving left
         if direction < 0 and is_right_frog(frog, total_left, total_right):
             if abs(direction) == 2:  # Jump
-                if i - 1 >= 0 and is_right_frog(state[i - 1], total_left, total_right):
-                    return False  # Can't jump over own team
+                # Para saltar, debe haber una rana del equipo contrario en la posición intermedia
+                middle_pos = i - 1
+                if middle_pos >= 0 and not is_right_frog(state[middle_pos], total_left, total_right) and state[middle_pos] != 0:
+                    return True  # Can jump over opposite team
+                else:
+                    return False  # Can't jump over empty space or own team
             return True
 
         return False

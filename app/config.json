@@ -71,7 +71,7 @@
     },
     "Ask": {
       "Description": "Agente encargado de preguntar al jugador",
-      "Equation": "(B + TP)/(B + TP + 1)"
+      "Equation": "(B + TP/10)/(B + TP/10 + 1)"
     }
   },
   "logging": {
