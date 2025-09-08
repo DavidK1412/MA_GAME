@@ -21,12 +21,19 @@ class Settings:
     def _load_config(cls) -> Dict[str, Any]:
         """Load configuration from config.json file."""
         if cls._config_data is None:
-            config_path = cls.BASE_DIR / "config.json"
+            # config.json está en el directorio app, no en el directorio padre
+            config_path = cls.BASE_DIR / "app" / "config.json"
             try:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     cls._config_data = json.load(f)
             except FileNotFoundError:
-                cls._config_data = {}
+                # Fallback: intentar en el directorio actual
+                try:
+                    config_path = Path(__file__).parent.parent / "config.json"
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        cls._config_data = json.load(f)
+                except FileNotFoundError:
+                    cls._config_data = {}
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON in config.json: {e}")
         return cls._config_data

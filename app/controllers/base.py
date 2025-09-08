@@ -96,7 +96,8 @@ class BeliefController(BaseController):
                 agents_cfg = config.get('agents') if isinstance(config, dict) else None
                 if isinstance(agents_cfg, dict):
                     belief_config = agents_cfg.get(self.name)
-            except Exception:
+            except Exception as e:
+                self.log_error("belief_config_error", e, {"belief_name": self.name})
                 belief_config = None
             
             equation = None

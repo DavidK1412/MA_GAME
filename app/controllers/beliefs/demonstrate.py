@@ -76,17 +76,35 @@ class DemonstrateController(BeliefController):
             
             # Parse movement and get best next move
             movement_state = [int(x) for x in last_movement['movement'].split(",")]
-            best_movement = best_next_move(movement_state, difficulty_config['final_state'])
             
-            if best_movement is None:
-                return SpeechResponse.create_error("No se pudo calcular el mejor movimiento")
-            
-            # Return demonstration data
-            return {
-                "type": "CORRECT",
-                "last_state": movement_state,
-                "best_next_state": best_movement
-            }
+            try:
+                best_movement = best_next_move(movement_state, difficulty_config['final_state'])
+                
+                if best_movement is None:
+                    # Si no se puede encontrar el mejor movimiento, devolver un mensaje de ayuda
+                    return SpeechResponse.create_rule_reminder(
+                        "No se pudo calcular el mejor movimiento en este momento. "
+                        "Recuerda: las ranas solo pueden moverse hacia adelante, "
+                        "una casilla o saltando sobre otra rana."
+                    )
+                
+                # Return demonstration data
+                return {
+                    "type": "CORRECT",
+                    "last_state": movement_state,
+                    "best_next_state": best_movement
+                }
+                
+            except Exception as e:
+                self.log_error("best_next_move_calculation", e, {
+                    "game_id": game_id,
+                    "movement_state": movement_state,
+                    "final_state": difficulty_config['final_state']
+                })
+                return SpeechResponse.create_rule_reminder(
+                    "Hubo un problema al calcular la demostración. "
+                    "Recuerda las reglas básicas del juego."
+                )
             
         except Exception as e:
             self.log_error("demonstrate_action", e, {"game_id": game_id})

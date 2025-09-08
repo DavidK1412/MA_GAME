@@ -48,7 +48,9 @@ beliefs = [
     ExplainController(db, "Explain"),
     AskController(db, "Ask")
 ]
-decision_controller = DecisionController(beliefs, settings.get_config())
+
+config = settings.get_config()
+decision_controller = DecisionController(beliefs, config)
 
 logger.info("Controllers initialized successfully")
 
@@ -127,7 +129,7 @@ async def move(game_id: str, movement: MovementRequestType):
         logger.info(f"Processing move for game {game_id}: {movement.movement}")
         logger.info(game_controller)
 
-        result = game_controller.move(game_id, movement, settings.get_config())
+        result = game_controller.move(game_id, movement, config)
         # Si el controlador devuelve un Response (por ejemplo, cambio de dificultad), responder de inmediato
         if isinstance(result, Response):
             return JSONResponse(content=result.dict(), status_code=200)

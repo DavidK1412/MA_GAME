@@ -308,18 +308,26 @@ def best_next_move(initial_state: List[int], goal_state: List[int]) -> Optional[
             # Fallback: elegir mejor vecino por heurística
             neighbors = generate_neighbors_wrapper(initial_state)
             if not neighbors:
-                logger.info("No neighbors available from current state")
+                logger.warning(f"No neighbors available from current state: {initial_state}")
                 return None
+            
+            # Log para debug
+            logger.debug(f"Using heuristic fallback with {len(neighbors)} neighbors")
             best = min(neighbors, key=lambda s: sum(1 for a, b in zip(s, goal_state) if a != b))
+            logger.debug(f"Selected best neighbor: {best}")
             return best
         except Exception as e:
             logger.error(f"Error finding shortest path: {e}")
             # Fallback: elegir mejor vecino por heurística
             neighbors = generate_neighbors_wrapper(initial_state)
             if not neighbors:
-                logger.info("No neighbors available from current state")
+                logger.warning(f"No neighbors available from current state: {initial_state}")
                 return None
+            
+            # Log para debug
+            logger.debug(f"Using error fallback with {len(neighbors)} neighbors")
             best = min(neighbors, key=lambda s: sum(1 for a, b in zip(s, goal_state) if a != b))
+            logger.debug(f"Selected best neighbor: {best}")
             return best
             
     except Exception as e:
