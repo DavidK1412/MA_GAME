@@ -2,7 +2,7 @@
 Demonstrate belief controller for demonstrating moves to players.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 from controllers.base import BeliefController
 from domain.models.response import SpeechResponse, Response, ResponseType
 from utils.incentive_scripts import get_tries_count, get_average_time_between_state_change, get_number_of_assertions
@@ -88,11 +88,17 @@ class DemonstrateController(BeliefController):
                         "una casilla o saltando sobre otra rana."
                     )
                 
-                # Return demonstration data
+                # Generate varied demonstration text
+                text = self._generate_demonstration_text(movement_state, best_movement)
+                
+                # Return demonstration data with proper format
                 return {
                     "type": "CORRECT",
-                    "last_state": movement_state,
-                    "best_next_state": best_movement
+                    "actions": {
+                        "text": text,
+                        "last_state": movement_state,
+                        "best_next_state": best_movement
+                    }
                 }
                 
             except Exception as e:
@@ -104,7 +110,7 @@ class DemonstrateController(BeliefController):
                 return SpeechResponse.create_rule_reminder(
                     "Hubo un problema al calcular la demostración. "
                     "Recuerda las reglas básicas del juego."
-                )
+            )
             
         except Exception as e:
             self.log_error("demonstrate_action", e, {"game_id": game_id})
@@ -118,6 +124,91 @@ class DemonstrateController(BeliefController):
         """
         result = self.safe_fetch_results(query, (game_id,))
         return result[0] if result else None
+    
+    def _generate_demonstration_text(self, last_state: List[int], best_next_state: List[int]) -> str:
+        """Generate varied demonstration text with rules, jokes, and motivation."""
+        import random
+        
+        # Analyze the movement to provide context
+        movement_type = self._analyze_movement_type(last_state, best_next_state)
+        
+        # Different categories of messages
+        rule_reminders = [
+            "¡Perfecto! Recuerda: las ranas solo pueden moverse hacia adelante, una casilla o saltando sobre otra rana.",
+            "¡Excelente! Las ranas no pueden retroceder, solo avanzar hacia su destino.",
+            "¡Muy bien! Observa cómo la rana salta sobre otra: es la clave para ganar eficientemente.",
+            "¡Correcto! Las ranas del equipo izquierdo van hacia la derecha, las del derecho hacia la izquierda."
+        ]
+        
+        motivational_jokes = [
+            "¡Qué salto tan elegante! 🐸 Las ranas están más coordinadas que un ballet.",
+            "¡Perfecto! Esta rana tiene mejor estrategia que un ajedrecista profesional.",
+            "¡Excelente movimiento! Las ranas están trabajando en equipo mejor que los humanos.",
+            "¡Qué inteligente! Esta rana debería dar clases de estrategia.",
+            "¡Increíble! Las ranas están más organizadas que el tráfico en hora pico.",
+            "¡Perfecto! Esta rana tiene más visión estratégica que un general."
+        ]
+        
+        explanations = [
+            "Observa cómo este movimiento acerca a las ranas a sus posiciones finales.",
+            "Este es el camino más eficiente hacia la victoria. ¡Sigue así!",
+            "Mira cómo cada movimiento cuenta para llegar al objetivo final.",
+            "Este paso te acerca un poco más a completar el nivel.",
+            "¡Estrategia perfecta! Cada movimiento tiene un propósito.",
+            "Observa la secuencia: cada rana se mueve hacia su destino."
+        ]
+        
+        encouragement = [
+            "¡Sigue así! Estás dominando el juego de las ranas.",
+            "¡Excelente! Tu comprensión del juego mejora con cada movimiento.",
+            "¡Perfecto! Estás desarrollando una gran estrategia.",
+            "¡Muy bien! Las ranas están orgullosas de tu progreso.",
+            "¡Increíble! Estás convirtiéndote en un maestro del juego.",
+            "¡Fantástico! Tu intuición para el juego es impresionante."
+        ]
+        
+        # Select message type based on movement analysis and randomness
+        message_types = []
+        
+        # Always include some explanation
+        message_types.append(("explanations", explanations))
+        
+        # Add rule reminder 30% of the time
+        if random.random() < 0.3:
+            message_types.append(("rule_reminders", rule_reminders))
+        
+        # Add motivational joke 40% of the time
+        if random.random() < 0.4:
+            message_types.append(("motivational_jokes", motivational_jokes))
+        
+        # Add encouragement 50% of the time
+        if random.random() < 0.5:
+            message_types.append(("encouragement", encouragement))
+        
+        # Combine selected messages
+        selected_messages = []
+        for msg_type, messages in message_types:
+            selected_messages.append(random.choice(messages))
+        
+        # Join messages with appropriate connectors
+        if len(selected_messages) == 1:
+            return selected_messages[0]
+        elif len(selected_messages) == 2:
+            return f"{selected_messages[0]} {selected_messages[1]}"
+        else:
+            return f"{selected_messages[0]} {selected_messages[1]} {selected_messages[2]}"
+    
+    def _analyze_movement_type(self, last_state: List[int], best_next_state: List[int]) -> str:
+        """Analyze the type of movement being demonstrated."""
+        # Find the position that changed
+        for i, (old, new) in enumerate(zip(last_state, best_next_state)):
+            if old != new:
+                # Check if it's a jump (moved 2 positions)
+                if abs(i - best_next_state.index(old)) == 2:
+                    return "jump"
+                else:
+                    return "single_move"
+        return "unknown"
     
     def _mark_last_movement_interrupted(self, attempt_id: str) -> None:
         """Mark the last movement as interrupted."""
