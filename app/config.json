@@ -55,23 +55,23 @@
   "agents": {
     "Feedback": {
       "Description": "Agente encargado de retroalimentar al jugador",
-      "Equation": "(E + B)/(E + B + 1)"
+      "Equation": "min(1, (E*2 + B*3)/12)"
     },
     "Advice": {
       "Description": "Agente encargado de dar consejos al jugador",
-      "Equation": "(IP + R)/(IP + R + 1)"
+      "Equation": "min(1, (IP + R*2)/18)"
     },
     "Explain": {
       "Description": "Agente encargado de explicar al jugador",
-      "Equation": "(1 - CE + E)/(E + 2)"
+      "Equation": "min(1, (1 - CE + E*2)/6)"
     },
     "Demonstrate": {
       "Description": "Agente encargado de demostrar al jugador",
-      "Equation": "(((TPM + 1) * (IP + 1) - A) / ((IP + 1) + ((TPM + 1) * (IP + 1) - A))) - 0.1"
+      "Equation": "min(1, (TPM/25 + (10-A)/12)/2)"
     },
     "Ask": {
       "Description": "Agente encargado de preguntar al jugador",
-      "Equation": "(B + TP/10)/(B + TP/10 + 1)"
+      "Equation": "min(1, (B*3 + TP/20)/4)"
     }
   },
   "logging": {
