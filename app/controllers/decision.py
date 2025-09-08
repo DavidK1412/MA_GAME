@@ -80,19 +80,18 @@ class DecisionController(BaseController):
                 key=lambda x: (-float(x['value']), priority.get(x['name'], 99))
             )
             
-            self.logger.info(f"Selected belief {best_belief['name']} with value {best_belief['value']}")
-            # Log explícito del ganador (para debug claro en español)
-            try:
-                self.logger.info(
-                    {
-                        "event": "belief_winner",
-                        "game_id": game_id,
-                        "winner": best_belief['name'],
-                        "value": float(best_belief['value'])
-                    }
-                )
-            except Exception:
-                self.logger.info(f"Belief winner: {best_belief['name']} (value={best_belief['value']})")
+            # Log detallado del ganador con todas las puntuaciones
+            winner_name = best_belief['name']
+            winner_value = float(best_belief['value'])
+            
+            # Crear resumen de todas las puntuaciones
+            scores_summary = []
+            for belief in evaluated_beliefs:
+                scores_summary.append(f"{belief['name']}={belief['value']:.3f}")
+            
+            self.logger.info(f"🏆 AGENTE GANADOR: {winner_name} con puntuación {winner_value:.3f}")
+            self.logger.info(f"📊 PUNTUACIONES COMPLETAS: {', '.join(scores_summary)}")
+            self.logger.info(f"🎯 ACCIÓN A EJECUTAR: {winner_name}")
             
             return best_belief['belief']
             

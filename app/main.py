@@ -144,7 +144,17 @@ async def move(game_id: str, movement: MovementRequestType):
             # Siempre ejecutar decisión y devolver respuesta de la creencia ganadora
             try:
                 selected_belief = decision_controller.make_decision(game_id)
+                logger.info(f"🚀 EJECUTANDO ACCIÓN: {selected_belief.name}")
+                
                 response = selected_belief.action(game_id)
+                
+                # Log del tipo de respuesta
+                if isinstance(response, Response):
+                    response_type = response.type if hasattr(response, 'type') else 'Unknown'
+                    logger.info(f"✅ RESPUESTA GENERADA: {response_type} - {selected_belief.name}")
+                else:
+                    logger.info(f"✅ RESPUESTA GENERADA: {type(response).__name__} - {selected_belief.name}")
+                
                 return JSONResponse(
                     content=response.dict() if isinstance(response, Response) else response,
                     status_code=200
