@@ -5,7 +5,7 @@ Feedback belief controller for providing personalized feedback to players.
 from typing import Any, Dict
 from controllers.base import BeliefController
 from domain.models.response import SpeechResponse, GameResponse
-from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
+from utils.incentive_scripts import get_misses_count, get_buclicity
 
 
 class FeedbackController(BeliefController):
@@ -18,7 +18,7 @@ class FeedbackController(BeliefController):
     
     def update_values(self, game_id: str, config: Dict[str, Any]) -> bool:
         """
-        Update belief values based on comprehensive game metrics.
+        Update belief values based on equation variables from config.
         
         Args:
             game_id: Game identifier
@@ -28,35 +28,16 @@ class FeedbackController(BeliefController):
             True if successful, False otherwise
         """
         try:
-            # Get comprehensive game progress metrics
-            metrics = get_game_progress(game_id, self.db_client)
-            
-            # Calculate belief value based on multiple factors
-            belief_value = 0.0
-            
-            # Factor 1: Performance-based feedback (30% weight)
-            performance_score = self._calculate_performance_score(metrics)
-            belief_value += performance_score * 0.3
-            
-            # Factor 2: Learning progress (25% weight)
-            learning_score = self._calculate_learning_score(metrics)
-            belief_value += learning_score * 0.25
-            
-            # Factor 3: Engagement level (20% weight)
-            engagement_score = self._calculate_engagement_score(metrics)
-            belief_value += engagement_score * 0.2
-            
-            # Factor 4: Difficulty adaptation (25% weight)
-            difficulty_score = self._calculate_difficulty_score(metrics)
-            belief_value += difficulty_score * 0.25
-            
-            # Cap belief value at 1.0 (sin escribir en BD)
-            belief_value = min(1.0, max(0.0, belief_value))
-            self.values = {"belief_value": belief_value, **metrics}
+            new_values = {
+                "E": get_misses_count(game_id, self.db_client),
+                "B": get_buclicity(game_id, self.db_client)
+            }
+            self.values = new_values
+            self.log_operation("values_updated", {"game_id": game_id, "values": new_values})
             return True
             
         except Exception as e:
-            self.logger.error(f"Error updating feedback belief values: {e}")
+            self.log_error("values_update", e, {"game_id": game_id})
             return False
     
     def _calculate_performance_score(self, metrics: Dict[str, Any]) -> float:

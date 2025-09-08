@@ -22,6 +22,58 @@
     "update_interval": 5,
     "threshold": 0.5
   },
+  "beliefs": {
+    "E": {
+      "Description": "Cantidad de errores del jugador",
+      "Endpoint": "${E_EP}"
+    },
+    "B": {
+      "Description": "Buclicidad",
+      "Endpoint": "${B_EP}"
+    },
+    "IP": {
+      "Description": "Intentos por partida",
+      "Endpoint": "${IP_EP}"
+    },
+    "R": {
+      "Description": "Ramificación",
+      "Endpoint": "${R_EP}"
+    },
+    "CE": {
+      "Description": "Conocimiento de las reglas",
+      "Endpoint": "${CE_EP}"
+    },
+    "TPM": {
+      "Description": "Tiempo por movimiento",
+      "Endpoint": "${TPM_EP}"
+    },
+    "TP": {
+      "Description": "Tiempo promedio",
+      "Endpoint": "${TP_EP}"
+    }
+  },
+  "agents": {
+    "Feedback": {
+      "Description": "Agente encargado de retroalimentar al jugador",
+      "Equation": "(E + B)/(E + B + 1)"
+    },
+    "Advice": {
+      "Description": "Agente encargado de dar consejos al jugador",
+      "Equation": "(IP + R)/(IP + R + 1)"
+    },
+    "Explain": {
+      "Description": "Agente encargado de explicar al jugador",
+      "Equation": "(1 - CE + E)/(E + 2)"
+    },
+    "Demonstrate": {
+      "Description": "Agente encargado de demostrar al jugador",
+      "Equation": "(((TPM + 1) * (IP + 1) - A) / ((IP + 1) + ((TPM + 1) * (IP + 1) - A))) - 0.1"
+    },
+    "Ask": {
+      "Description": "Agente encargado de preguntar al jugador",
+      "Equation": "(B + TP)/(B + TP + 1)"
+    }
+  },
   "logging": {
     "level": "INFO",
     "file": "logs/frog_game.log",

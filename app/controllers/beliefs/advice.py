@@ -13,11 +13,11 @@ from utils.incentive_scripts import get_tries_count, get_branch_factor
 class AdviceController(BeliefController):
     """Controller for providing advice to players based on their performance."""
     
-    def __init__(self, db_client, name: str):
+    def __init__(self, db_client, name: str = "Advice"):
         super().__init__(db_client, name)
 
     def update_values(self, game_id: str, config: Dict[str, Any]) -> bool:
-        """Update belief values for advice calculation."""
+        """Update belief values for advice calculation using equation variables."""
         try:
             new_values = {
                 "IP": get_tries_count(game_id, self.db_client),

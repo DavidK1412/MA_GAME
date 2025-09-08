@@ -59,6 +59,24 @@ class SpeechResponse(Response):
             actions={"text": text},
             message="Rule reminder"
         )
+    
+    @classmethod
+    def create_question(cls, text: str) -> 'SpeechResponse':
+        """Create a question speech response."""
+        return cls(
+            type=ResponseType.ASK,
+            actions={"text": text},
+            message="Question message"
+        )
+    
+    @classmethod
+    def create_error(cls, text: str) -> 'SpeechResponse':
+        """Create an error speech response."""
+        return cls(
+            type=ResponseType.ERROR,
+            actions={"text": text},
+            message="Error message"
+        )
 
 
 class GameResponse(Response):

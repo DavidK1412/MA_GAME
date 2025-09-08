@@ -3,6 +3,7 @@ Application settings and configuration.
 """
 
 import os
+import json
 from typing import Dict, Any
 from pathlib import Path
 
@@ -13,12 +14,29 @@ class Settings:
     # Base directory
     BASE_DIR = Path(__file__).parent.parent.parent
     
+    # Load configuration from config.json
+    _config_data = None
+    
+    @classmethod
+    def _load_config(cls) -> Dict[str, Any]:
+        """Load configuration from config.json file."""
+        if cls._config_data is None:
+            config_path = cls.BASE_DIR / "config.json"
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cls._config_data = json.load(f)
+            except FileNotFoundError:
+                cls._config_data = {}
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in config.json: {e}")
+        return cls._config_data
+    
     # Database settings
-    DATABASE_HOST: str = os.getenv("PGHOST", "switchback.proxy.rlwy.net")
-    DATABASE_PORT: str = os.getenv("PGPORT", "39884")
-    DATABASE_NAME: str = os.getenv("PGDATABASE", "railway")
+    DATABASE_HOST: str = os.getenv("PGHOST", "localhost")
+    DATABASE_PORT: str = os.getenv("PGPORT", "5432")
+    DATABASE_NAME: str = os.getenv("PGDATABASE", "frog_game")
     DATABASE_USER: str = os.getenv("PGUSER", "postgres")
-    DATABASE_PASSWORD: str = os.getenv("PGPASSWORD", "gRcGbxGzgDAHQKNngamuZzjJpSSUQNyO")
+    DATABASE_PASSWORD: str = os.getenv("PGPASSWORD", "password")
     
     # API settings
     API_TITLE: str = "Frog Game API"
@@ -37,6 +55,23 @@ class Settings:
     # Belief system settings
     BELIEF_EVALUATION_THRESHOLD: float = 0.5
     MIN_CONFIDENCE_SCORE: float = 0.3
+    
+    @classmethod
+    def get_config(cls) -> Dict[str, Any]:
+        """Get the complete configuration from config.json."""
+        return cls._load_config()
+    
+    @classmethod
+    def get_beliefs_config(cls) -> Dict[str, Any]:
+        """Get beliefs configuration from config.json."""
+        config = cls._load_config()
+        return config.get('beliefs', {})
+    
+    @classmethod
+    def get_agents_config(cls) -> Dict[str, Any]:
+        """Get agents configuration from config.json."""
+        config = cls._load_config()
+        return config.get('agents', {})
     
     @classmethod
     def get_database_config(cls) -> Dict[str, str]:

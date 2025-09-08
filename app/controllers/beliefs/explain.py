@@ -5,7 +5,7 @@ Explain belief controller for providing explanations to players.
 from typing import Any, Dict
 from controllers.base import BeliefController
 from domain.models.response import SpeechResponse, Response, ResponseType
-from utils.incentive_scripts import get_game_progress, calculate_player_skill_level
+from utils.incentive_scripts import get_tries_count, get_misses_count
 
 
 class ExplainController(BeliefController):
@@ -18,7 +18,7 @@ class ExplainController(BeliefController):
     
     def update_values(self, game_id: str, config: Dict[str, Any]) -> bool:
         """
-        Update belief values based on game metrics.
+        Update belief values based on equation variables from config.
         
         Args:
             game_id: Game identifier
@@ -28,45 +28,21 @@ class ExplainController(BeliefController):
             True if successful, False otherwise
         """
         try:
-            # Get game progress metrics
-            metrics = get_game_progress(game_id, self.db_client)
+            # Calculate CE (Conocimiento de las reglas) based on tries and misses
+            tries_count = get_tries_count(game_id, self.db_client)
+            misses_count = get_misses_count(game_id, self.db_client)
+            CE = (tries_count + misses_count) / 10
             
-            # Calculate belief value based on player understanding
-            # Higher belief value when player needs more explanation
-            belief_value = 0.0
-            
-            # Factor 1: High tries count suggests confusion
-            if metrics['tries_count'] > 15:
-                belief_value += 0.4
-            elif metrics['tries_count'] > 10:
-                belief_value += 0.3
-            elif metrics['tries_count'] > 5:
-                belief_value += 0.2
-            
-            # Factor 2: High misses indicate rule misunderstanding
-            if metrics['misses_count'] > 5:
-                belief_value += 0.3
-            elif metrics['misses_count'] > 2:
-                belief_value += 0.2
-            
-            # Factor 3: High buclicity suggests getting stuck
-            if metrics['buclicity'] > 5:
-                belief_value += 0.2
-            
-            # Factor 4: Low skill level needs more explanation
-            skill_level = calculate_player_skill_level(game_id, self.db_client)
-            if skill_level < 0.3:
-                belief_value += 0.3
-            elif skill_level < 0.6:
-                belief_value += 0.2
-            
-            # Cap belief value at 1.0
-            belief_value = min(1.0, belief_value)
-            self.values = {"belief_value": belief_value, **metrics}
+            new_values = {
+                "CE": CE,
+                "E": misses_count
+            }
+            self.values = new_values
+            self.log_operation("values_updated", {"game_id": game_id, "values": new_values})
             return True
             
         except Exception as e:
-            self.logger.error(f"Error updating explain belief values: {e}")
+            self.log_error("values_update", e, {"game_id": game_id})
             return False
     
     def action(self, game_id: str) -> Response:
