@@ -10,7 +10,7 @@ import os
 class CILConfig:
     """Configuration manager for CIL-specific settings."""
     
-    def __init__(self, base_config_path: str = "app/config.json"):
+    def __init__(self, base_config_path: str = "config.json"):
         self.base_config_path = base_config_path
         self.base_config = self._load_base_config()
         self.cil_overrides = self._get_cil_overrides()
@@ -18,8 +18,22 @@ class CILConfig:
     def _load_base_config(self) -> Dict[str, Any]:
         """Load the base configuration from JSON."""
         try:
-            with open(self.base_config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            # Try different possible paths
+            possible_paths = [
+                self.base_config_path,
+                f"app/{self.base_config_path}",
+                f"../{self.base_config_path}",
+                "config.json"
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+            
+            # If no config file found, return empty dict
+            print("Warning: No configuration file found, using defaults")
+            return {}
         except Exception as e:
             print(f"Error loading base config: {e}")
             return {}

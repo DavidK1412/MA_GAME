@@ -6,7 +6,7 @@ Adapts belief equations based on individual learning profiles and progress.
 from typing import Dict, Any, Optional
 import logging
 from .learning_profile import LearningProfile, LearningStyle, DifficultyLevel
-from ..config.cil_config import CILConfig
+from config.cil_config import CILConfig
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 """
-Configuration package for the Frog Game system.
+Configuration module for the MA_GAME application.
 """
 
-from .settings import settings
+from .cil_config import CILConfig
 
-__all__ = ['settings']
+__all__ = ['CILConfig']
