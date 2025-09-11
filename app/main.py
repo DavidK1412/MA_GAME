@@ -289,27 +289,27 @@ def _handle_game_completion(completion_type: GameCompletedError) -> JSONResponse
             "¡Estupendo! Estás convirtiéndote en un experto."
         ]
         message = random.choice(best_movement_messages)
+    elif str(completion_type) == "Final movement":
+        # Mensajes especiales para completar todos los niveles
+        final_completion_messages = [
+            "¡Felicidades! Has completado todos los niveles del juego! ¡Eres un verdadero maestro!",
+            "¡Increíble! Has conquistado todos los niveles. ¡Eres un experto en el juego de las ranas!",
+            "¡Fantástico! Has superado todos los desafíos. ¡Eres un campeón del juego!",
+            "¡Magnífico! Has dominado todos los niveles. ¡Tu habilidad es excepcional!",
+            "¡Brillante! Has completado el juego completo. ¡Eres un verdadero estratega!",
+            "¡Sobresaliente! Has vencido todos los niveles. ¡Tu perseverancia es admirable!",
+            "¡Extraordinario! Has terminado todos los desafíos. ¡Eres un maestro del juego!",
+            "¡Phenomenal! Has completado toda la aventura. ¡Tu destreza es impresionante!"
+        ]
+        message = random.choice(final_completion_messages)
     else:
-        if str(completion_type) == "Final movement":
-            # Mensajes especiales para completar todos los niveles
-            final_completion_messages = [
-                "¡Felicidades! Has completado todos los niveles del juego! ¡Eres un verdadero maestro!",
-                "¡Increíble! Has conquistado todos los niveles. ¡Eres un experto en el juego de las ranas!",
-                "¡Fantástico! Has superado todos los desafíos. ¡Eres un campeón del juego!",
-                "¡Magnífico! Has dominado todos los niveles. ¡Tu habilidad es excepcional!",
-                "¡Brillante! Has completado el juego completo. ¡Eres un verdadero estratega!",
-                "¡Sobresaliente! Has vencido todos los niveles. ¡Tu perseverancia es admirable!",
-                "¡Extraordinario! Has terminado todos los desafíos. ¡Eres un maestro del juego!",
-                "¡Phenomenal! Has completado toda la aventura. ¡Tu destreza es impresionante!"
-            ]
-            message = random.choice(final_completion_messages)
-        else:
-            completion_messages = {
-                "First move": "¡Comienza tu camino!"
-            }
-            message = completion_messages.get(str(completion_type), "¡Buen trabajo!")
-        
-        response_content = SpeechResponse.create_encouragement(message).dict()
+        completion_messages = {
+            "First move": "¡Comienza tu camino!"
+        }
+        message = completion_messages.get(str(completion_type), "¡Buen trabajo!")
+    
+    # Crear response_content para todos los casos
+    response_content = SpeechResponse.create_encouragement(message).dict()
     
     # Log del JSON de finalización de juego
     import json
