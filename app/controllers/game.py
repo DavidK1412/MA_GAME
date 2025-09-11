@@ -112,6 +112,18 @@ class GameController(BaseController):
                 }
             
             current_step = self._get_current_step(attempt['id'])
+            
+            # Si need_correct es True, solo guardar el movimiento sin procesar lógica de juego
+            if movement.need_correct:
+                self._save_movement(attempt['id'], movement, current_step + 1)
+                self.log_operation("movement_saved_only", {
+                    "game_id": game_id,
+                    "attempt_id": attempt['id'],
+                    "step": current_step + 1,
+                    "need_correct": True
+                })
+                return "movement_saved"
+            
             difficulty_config = self._difficulty_configs[attempt['difficulty_id']]
             
             # Validate and process the movement

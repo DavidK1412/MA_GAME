@@ -130,6 +130,20 @@ async def move(game_id: str, movement: MovementRequestType):
         logger.info(game_controller)
 
         result = game_controller.move(game_id, movement, config)
+        
+        # Si need_correct es True, solo se guardó el movimiento, devolver confirmación simple
+        if result == "movement_saved":
+            logger.info(f"Movement saved only for game {game_id} (need_correct=True)")
+            response_content = Response(
+                type=ResponseType.STATUS,
+                actions={"message": "Movimiento guardado correctamente", "saved": True}
+            ).dict()
+            
+            return JSONResponse(
+                content=response_content,
+                status_code=200
+            )
+        
         # Si el controlador devuelve un Response (por ejemplo, cambio de dificultad), responder de inmediato
         if isinstance(result, Response):
             return JSONResponse(content=result.dict(), status_code=200)

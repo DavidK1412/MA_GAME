@@ -18,6 +18,7 @@ class MovementType(str, Enum):
 class MovementRequestType(BaseModel):
     """Movement request model."""
     movement: list[int]
+    need_correct: bool
     
     @validator('movement')
     def validate_movement(cls, v):
