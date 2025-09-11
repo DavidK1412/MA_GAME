@@ -134,27 +134,64 @@ class GameController(BaseController):
             if self._is_final_move(movement, difficulty_config, current_step):
                 self._save_correct_movement(attempt['id'], movement, current_step)
                 self._complete_attempt(attempt['id'])
-                # Subir de nivel si es posible
-                try:
-                    max_level = max(self._difficulty_configs.keys())
-                    current_level = int(attempt['difficulty_id'])
-                    if current_level < max_level:
+                
+                # Obtener nivel actual y máximo
+                max_level = max(self._difficulty_configs.keys())
+                current_level = int(attempt['difficulty_id'])
+                
+                # Si no es el nivel máximo, subir de nivel
+                if current_level < max_level:
+                    try:
                         new_level = current_level + 1
+                        
+                        # Verificar que no haya intento activo antes de crear el nuevo
+                        if self._has_active_attempt(game_id):
+                            self.log_error("unexpected_active_attempt", Exception("Active attempt found after completion"), {
+                                "game_id": game_id,
+                                "current_level": current_level,
+                                "new_level": new_level
+                            })
+                            # Forzar desactivación de cualquier intento activo
+                            self.safe_execute_query(
+                                "UPDATE game_attempts SET is_active = FALSE WHERE game_id = %s AND is_active = TRUE",
+                                (game_id,)
+                            )
+                        
                         new_attempt_id = self._start_attempt_with_difficulty(game_id, new_level)
+                        if not new_attempt_id:
+                            raise Exception("Failed to create new attempt")
+                            
                         self.log_operation("level_up", {
                             "game_id": game_id,
                             "from": current_level,
                             "to": new_level,
                             "new_attempt_id": new_attempt_id
                         })
-                        # Devolver DTO de cambio de dificultad
+                        
+                        # Mensajes de subida de nivel
+                        import random
+                        level_up_messages = [
+                            f"¡Felicidades! Has completado el nivel {current_level} y subido al nivel {new_level}!",
+                            f"¡Excelente trabajo! Nivel {current_level} completado. ¡Bienvenido al nivel {new_level}!",
+                            f"¡Increíble! Has dominado el nivel {current_level}. ¡Ahora el nivel {new_level} te espera!",
+                            f"¡Fantástico! Nivel {current_level} superado. ¡Prepárate para el desafío del nivel {new_level}!",
+                            f"¡Magnífico! Has conquistado el nivel {current_level}. ¡El nivel {new_level} será tu próximo reto!",
+                            f"¡Brillante! Nivel {current_level} completado con éxito. ¡Adelante al nivel {new_level}!",
+                            f"¡Sobresaliente! Has superado el nivel {current_level}. ¡El nivel {new_level} te desafía!",
+                            f"¡Extraordinario! Nivel {current_level} dominado. ¡Bienvenido al nivel {new_level}!"
+                        ]
+                        
+                        message = random.choice(level_up_messages)
                         return GameResponse.difficulty_changed(
-                            text="¡Nivel aumentado!",
+                            text=message,
                             level_change=1
                         )
-                except Exception as e:
-                    self.log_error("level_up_failed", e, {"game_id": game_id, "attempt_id": attempt['id']})
-                # Si no se pudo subir nivel, finalizar normalmente
+                    except Exception as e:
+                        self.log_error("level_up_failed", e, {"game_id": game_id, "attempt_id": attempt['id']})
+                        # Si falla la subida de nivel, usar mensaje de finalización
+                        pass
+                
+                # Si es el nivel máximo, lanzar excepción para que se maneje en main.py
                 raise GameCompletedError("Final movement")
             
             # Save regular movement

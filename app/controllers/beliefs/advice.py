@@ -81,9 +81,28 @@ class AdviceController(BeliefController):
     
     def _create_encouragement_response(self) -> SpeechResponse:
         """Create encouragement response for minimum difficulty."""
-        return SpeechResponse.create_encouragement(
-            "Tal vez necesitas algo más de práctica, ¡mucho ánimo!"
-        )
+        import random
+        
+        encouragement_messages = [
+            "Tal vez necesitas algo más de práctica, ¡mucho ánimo!",
+            "¡No te desanimes! Cada intento te acerca más al éxito.",
+            "¡Sigue practicando! La paciencia es la clave del éxito.",
+            "¡Tú puedes! Con un poco más de práctica lo lograrás.",
+            "¡Ánimo! Cada error es una oportunidad de aprender.",
+            "¡No te rindas! Los grandes jugadores se hacen con práctica.",
+            "¡Muy bien! Estás mejorando con cada intento.",
+            "¡Sigue así! La constancia es tu mejor aliada.",
+            "¡Excelente actitud! La práctica hace al maestro.",
+            "¡Persevera! Cada movimiento te enseña algo nuevo.",
+            "¡Buen trabajo! Estás desarrollando tu estrategia.",
+            "¡Continúa! La experiencia se gana con el tiempo.",
+            "¡Mantén el ritmo! Estás en el camino correcto.",
+            "¡Sigue intentando! Cada partida te hace más hábil.",
+            "¡No te preocupes! El aprendizaje lleva su tiempo."
+        ]
+        
+        message = random.choice(encouragement_messages)
+        return SpeechResponse.create_encouragement(message)
     
     def _reduce_difficulty_and_restart(self, game_id: str, attempt_id: str, current_difficulty: int) -> GameResponse:
         """Reduce difficulty and restart the game attempt."""

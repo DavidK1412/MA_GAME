@@ -29,8 +29,28 @@ class DemonstrateController(BeliefController):
             True if successful, False otherwise
         """
         try:
+            # Obtener el número de intentos actuales
+            tries_count = get_tries_count(game_id, self.db_client)
+            
+            # En los primeros 2 movimientos, no activar Demonstrate
+            if tries_count <= 2:
+                # Establecer valores que resulten en una puntuación muy baja
+                new_values = {
+                    "IP": tries_count,
+                    "TPM": 0,  # Tiempo muy bajo para reducir puntuación
+                    "A": 10    # Número alto de aserciones para reducir puntuación
+                }
+                self.values = new_values
+                self.log_operation("values_updated_early_moves", {
+                    "game_id": game_id, 
+                    "values": new_values,
+                    "tries_count": tries_count,
+                    "reason": "Primeros 2 movimientos - Demonstrate desactivado"
+                })
+                return True
+            
             new_values = {
-                "IP": get_tries_count(game_id, self.db_client),
+                "IP": tries_count,
                 "TPM": get_average_time_between_state_change(game_id, self.db_client),
                 "A": get_number_of_assertions(game_id, self.db_client)
             }

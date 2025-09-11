@@ -195,57 +195,96 @@ def get_misses_count(game_id: str, db_client) -> int:
         return 0
 
 
-def get_buclicity(game_id: str, db_client) -> float:
+def get_enhanced_buclicity(game_id: str, db_client) -> float:
     """
-    Calculate buclicity (repetitive movement pattern) for a game attempt.
+    Enhanced buclicity calculation for CIL children - measures learning patterns and persistence.
     
     Args:
         game_id: Game identifier
         db_client: Database client instance
         
     Returns:
-        Buclicity value
+        Enhanced buclicity value (0-1, normalized)
     """
     try:
         game_attempt_id = get_actual_attempt_id(game_id, db_client)
         if not game_attempt_id:
             return 0.0
             
-        # Get current movement (last movement, highest step)
-        query = "SELECT step, movement FROM movements WHERE attempt_id = %s ORDER BY step DESC LIMIT 1"
+        # Get all movements for pattern analysis
+        query = "SELECT step, movement FROM movements WHERE attempt_id = %s ORDER BY step ASC"
         params = (game_attempt_id,)
         result = db_client.fetch_results(query, params)
         
-        if not result:
+        if len(result) < 3:  # Need at least 3 movements for meaningful analysis
             return 0.0
             
-        current_step = result[0]['step']
-        current_movement = result[0]['movement']
+        movements = [(r['step'], r['movement']) for r in result]
+        total_movements = len(movements)
         
-        # Find the last step with the same movement
-        query = "SELECT step FROM movements WHERE attempt_id = %s AND movement = %s ORDER BY step DESC LIMIT 2"
-        params = (game_attempt_id, current_movement)
-        result_2 = db_client.fetch_results(query, params)
+        # Calculate pattern repetition score (adapted for CIL children)
+        pattern_scores = []
+        window_sizes = [2, 3]  # Check for 2-step and 3-step patterns
         
-        if len(result_2) < 2:
-            buclicity = 0.0
+        for window_size in window_sizes:
+            if total_movements < window_size:
+                continue
+                
+            pattern_count = 0
+            for i in range(window_size, total_movements):
+                current_pattern = [movements[j][1] for j in range(i-window_size, i)]
+                
+                # Count occurrences of this pattern
+                occurrences = 0
+                for j in range(len(movements) - window_size + 1):
+                    pattern = [movements[k][1] for k in range(j, j+window_size)]
+                    if pattern == current_pattern:
+                        occurrences += 1
+                
+                if occurrences > 1:
+                    # Weight recent patterns more heavily for CIL children
+                    recency_weight = (i - window_size + 1) / total_movements
+                    pattern_count += (occurrences - 1) * recency_weight
+            
+            if total_movements > window_size:
+                pattern_scores.append(pattern_count / (total_movements - window_size))
+        
+        # Calculate immediate repetition (CIL children often repeat immediately)
+        immediate_repetitions = 0
+        for i in range(1, total_movements):
+            if movements[i][1] == movements[i-1][1]:
+                immediate_repetitions += 1
+        
+        immediate_repetition_score = immediate_repetitions / max(1, total_movements - 1)
+        
+        # Combine pattern scores with immediate repetition
+        if pattern_scores:
+            avg_pattern_score = sum(pattern_scores) / len(pattern_scores)
+            enhanced_buclicity = (avg_pattern_score * 0.7 + immediate_repetition_score * 0.3)
         else:
-            buclicity = current_step - result_2[1]['step']
+            enhanced_buclicity = immediate_repetition_score
         
-        # Update last_buclicity in game_attempts
+        # Normalize to 0-1 range
+        normalized_buclicity = min(1.0, enhanced_buclicity)
+        
+        # Update database
         try:
             update_query = "UPDATE game_attempts SET last_buclicity = %s WHERE id = %s"
-            update_params = (buclicity, game_attempt_id)
+            update_params = (normalized_buclicity, game_attempt_id)
             db_client.execute_query(update_query, update_params)
         except Exception as e:
             logger.warning(f"Could not update buclicity in database: {e}")
         
-        logger.debug(f'Buclicity calculated: {buclicity}')
-        return float(buclicity)
+        logger.debug(f'Enhanced buclicity calculated: {normalized_buclicity}')
+        return normalized_buclicity
         
     except Exception as e:
-        logger.error(f"Error calculating buclicity: {e}")
+        logger.error(f"Error calculating enhanced buclicity: {e}")
         return 0.0
+
+def get_buclicity(game_id: str, db_client) -> float:
+    """Wrapper for backward compatibility."""
+    return get_enhanced_buclicity(game_id, db_client)
 
 
 def get_tries_count(game_id: str, db_client) -> int:
