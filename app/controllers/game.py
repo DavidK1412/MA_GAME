@@ -310,7 +310,34 @@ class GameController(BaseController):
 
     def _is_final_move(self, movement: MovementRequestType, difficulty_config: Dict, current_step: int) -> bool:
         """Check if movement is the final winning move."""
-        return movement.movement == difficulty_config['final_state'] and current_step > 1
+        if current_step < 1:
+            return False
+            
+        current_state = movement.movement
+        blocks_per_team = difficulty_config['blocks_per_team']
+        
+        # Encontrar la posición del 0 (espacio vacío)
+        try:
+            zero_index = current_state.index(0)
+        except ValueError:
+            return False
+        
+        # Verificar que el primer slice (antes del 0) contenga los cubos correctos
+        first_slice = current_state[:zero_index]
+        expected_first_slice = list(range(blocks_per_team + 1, blocks_per_team * 2 + 1))  # [4,5,6] para nivel 1
+        
+        # Verificar que el último slice (después del 0) contenga los cubos correctos  
+        last_slice = current_state[zero_index + 1:]
+        expected_last_slice = list(range(1, blocks_per_team + 1))  # [1,2,3] para nivel 1
+        
+        # Verificar que ambos slices contengan exactamente los valores esperados
+        first_slice_sorted = sorted(first_slice)
+        last_slice_sorted = sorted(last_slice)
+        
+        is_first_slice_correct = first_slice_sorted == expected_first_slice
+        is_last_slice_correct = last_slice_sorted == expected_last_slice
+        
+        return is_first_slice_correct and is_last_slice_correct
 
     def _save_correct_movement(self, attempt_id: str, movement: MovementRequestType, step: int) -> None:
         """Save a correct movement."""

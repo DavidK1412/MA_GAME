@@ -197,7 +197,7 @@ def get_misses_count(game_id: str, db_client) -> int:
 
 def get_enhanced_buclicity(game_id: str, db_client) -> float:
     """
-    Enhanced buclicity calculation for CIL children - measures learning patterns and persistence.
+    Enhanced buclicity calculation - measures learning patterns and persistence.
     
     Args:
         game_id: Game identifier
@@ -222,7 +222,7 @@ def get_enhanced_buclicity(game_id: str, db_client) -> float:
         movements = [(r['step'], r['movement']) for r in result]
         total_movements = len(movements)
         
-        # Calculate pattern repetition score (adapted for CIL children)
+        # Calculate pattern repetition score
         pattern_scores = []
         window_sizes = [2, 3]  # Check for 2-step and 3-step patterns
         
@@ -242,14 +242,14 @@ def get_enhanced_buclicity(game_id: str, db_client) -> float:
                         occurrences += 1
                 
                 if occurrences > 1:
-                    # Weight recent patterns more heavily for CIL children
+                    # Weight recent patterns more heavily
                     recency_weight = (i - window_size + 1) / total_movements
                     pattern_count += (occurrences - 1) * recency_weight
             
             if total_movements > window_size:
                 pattern_scores.append(pattern_count / (total_movements - window_size))
         
-        # Calculate immediate repetition (CIL children often repeat immediately)
+        # Calculate immediate repetition
         immediate_repetitions = 0
         for i in range(1, total_movements):
             if movements[i][1] == movements[i-1][1]:

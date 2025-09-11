@@ -6,8 +6,6 @@ from typing import Any, Dict
 from controllers.base import BeliefController
 from domain.models.response import SpeechResponse, GameResponse
 from utils.incentive_scripts import get_misses_count, get_buclicity, get_game_progress, calculate_player_skill_level
-from utils.learning_profile import LearningProfile
-from utils.cil_feedback_system import CILFeedbackSystem
 
 
 class FeedbackController(BeliefController):
@@ -17,7 +15,6 @@ class FeedbackController(BeliefController):
     
     def __init__(self, db_client, name: str = "Feedback"):
         super().__init__(db_client, name)
-        self.cil_feedback_system = CILFeedbackSystem()
     
     def update_values(self, game_id: str, config: Dict[str, Any]) -> bool:
         """
@@ -158,7 +155,7 @@ class FeedbackController(BeliefController):
     
     def action(self, game_id: str) -> SpeechResponse:
         """
-        Provide personalized feedback action based on belief evaluation for CIL children.
+        Provide personalized feedback action based on belief evaluation.
         
         Args:
             game_id: Game identifier
@@ -167,41 +164,40 @@ class FeedbackController(BeliefController):
             SpeechResponse with personalized feedback
         """
         try:
-            # Get comprehensive metrics
+            # Recalcular belief_value y contexto en memoria (sin BD)
             metrics = get_game_progress(game_id, self.db_client)
+            belief_value = 0.0
+            performance_score = self._calculate_performance_score(metrics)
+            belief_value += performance_score * 0.3
+            learning_score = self._calculate_learning_score(metrics)
+            belief_value += learning_score * 0.25
+            engagement_score = self._calculate_engagement_score(metrics)
+            belief_value += engagement_score * 0.2
+            difficulty_score = self._calculate_difficulty_score(metrics)
+            belief_value += difficulty_score * 0.25
+            belief_value = min(1.0, max(0.0, belief_value))
+
+            # Obtener dificultad actual sin columnas de creencias
+            difficulty_id = 1
+            try:
+                res = self.db_client.fetch_results(
+                    "SELECT difficulty_id FROM game_attempts WHERE game_id = %s AND is_active = TRUE",
+                    (game_id,)
+                )
+                if res:
+                    difficulty_id = int(res[0].get('difficulty_id', 1))
+            except Exception:
+                difficulty_id = 1
             
-            # Create or update learning profile
-            learning_profile = LearningProfile(game_id)
-            learning_profile.update_from_metrics(metrics)
-            
-            # Get adaptive feedback using CIL system
-            feedback_data = self.cil_feedback_system.get_adaptive_feedback(
-                game_id, metrics, learning_profile
-            )
-            
-            # Create enhanced response with visual and verbal cues
-            message = feedback_data["message"]
-            
-            # Add visual cues if appropriate
-            if feedback_data.get("visual_cues"):
-                visual_cues_text = " ".join(feedback_data["visual_cues"])
-                message += f" {visual_cues_text}"
-            
-            # Add verbal guidance if appropriate
-            if feedback_data.get("verbal_guidance"):
-                verbal_guidance_text = " ".join(feedback_data["verbal_guidance"])
-                message += f" {verbal_guidance_text}"
-            
-            # Add next action hint if available
-            if feedback_data.get("next_action_hint"):
-                message += f" 💡 {feedback_data['next_action_hint']}"
+            # Generate personalized feedback message
+            message = self._generate_feedback_message(belief_value, metrics, difficulty_id)
             
             return SpeechResponse.create_encouragement(message)
             
         except Exception as e:
-            self.logger.error(f"Error in CIL feedback action: {e}")
+            self.logger.error(f"Error in feedback action: {e}")
             return SpeechResponse.create_encouragement(
-                "¡Muy bien! Sigue intentando. 🌟"
+                "Ocurrió un error al generar el feedback personalizado."
             )
     
     def _generate_feedback_message(self, belief_value: float, metrics: Dict[str, Any], difficulty_id: int) -> str:

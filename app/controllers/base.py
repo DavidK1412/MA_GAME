@@ -6,8 +6,6 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from core.logging import get_logger
 from utils.database import DatabaseClient
-from utils.learning_profile import LearningProfile
-from utils.cil_equation_system import CILEquationSystem
 
 
 class BaseController(ABC):
@@ -70,12 +68,11 @@ class BaseController(ABC):
 
 
 class BeliefController(BaseController):
-    """Base controller for belief system controllers with CIL support."""
+    """Base controller for belief system controllers."""
     
     def __init__(self, db_client: DatabaseClient, name: str):
         super().__init__(db_client, name)
         self.values: Optional[Dict[str, Any]] = None
-        self.cil_equation_system = CILEquationSystem()
     
     @abstractmethod
     def update_values(self, game_id: str, config: Dict[str, Any]) -> bool:
@@ -88,28 +85,10 @@ class BeliefController(BaseController):
         pass
     
     def evaluate_belief(self, game_id: str, config: Dict[str, Any]) -> float:
-        """Evaluate belief based on current values and configuration with CIL adaptation."""
+        """Evaluate belief based on current values and configuration."""
         try:
             if not self.update_values(game_id, config):
                 raise ValueError(f'Error updating values for belief {self.name}')
-            
-            # Get comprehensive metrics for CIL learning profile
-            from utils.incentive_scripts import get_game_progress
-            metrics = get_game_progress(game_id, self.db_client)
-            
-            # Create or update learning profile
-            learning_profile = LearningProfile(game_id)
-            learning_profile.update_from_metrics(metrics)
-            
-            # Get adaptive equation for CIL children
-            adaptive_equation = self.cil_equation_system.get_adaptive_equation(
-                self.name, metrics, learning_profile
-            )
-            
-            # Get adaptive weights
-            adaptive_weights = self.cil_equation_system.get_adaptive_weights(
-                self.name, learning_profile
-            )
             
             # Configuración de la creencia (tolerante si no existe 'agents')
             belief_config = None
@@ -121,22 +100,21 @@ class BeliefController(BaseController):
                 self.log_error("belief_config_error", e, {"belief_name": self.name})
                 belief_config = None
             
-            # Use adaptive equation instead of static one
-            equation = adaptive_equation
+            equation = None
+            if isinstance(belief_config, dict):
+                equation = belief_config.get('Equation')
             
             # Import here to avoid circular imports
             from utils.equation_utils import evaluate_equation, replace_placeholders_in_equation
             
-            # Use adaptive weights instead of static ones
-            weights = adaptive_weights
+            weights = belief_config.get('Weights', {}) if isinstance(belief_config, dict) else {}
             standardization = belief_config.get('Standardization', {}) if isinstance(belief_config, dict) else {}
             
-            # Normalize values with adaptive weights
+            # Normalize values
             normalized_values = {}
             for var, value in self.values.items():
                 max_value = standardization.get(f"{var}_max", 1)
-                weight = adaptive_weights.get(var, 1.0)
-                normalized_values[var] = (value / max_value if max_value > 0 else 0) * weight
+                normalized_values[var] = value / max_value if max_value > 0 else 0
             
             # Si no hay ecuación, usar fallback (promedio de valores normalizados)
             if not equation:
@@ -145,33 +123,26 @@ class BeliefController(BaseController):
                 self.log_operation("belief_evaluated_fallback", {
                     "belief": self.name,
                     "normalized_values": normalized_values,
-                    "result": result,
-                    "cil_adaptation": True
+                    "result": result
                 })
             else:
                 context = {**weights, **normalized_values}
                 processed_equation = replace_placeholders_in_equation(equation, context)
                 result = evaluate_equation(processed_equation, context)
-            
-            # Log detallado de creencias con información CIL
+            # Log detallado de creencias: valores crudos, normalizados, pesos y resultado
             self.log_operation("belief_values", {
                 "belief": self.name,
                 "raw_values": self.values,
                 "normalized_values": normalized_values,
-                "adaptive_weights": adaptive_weights,
+                "weights": weights,
                 "equation": equation,
                 "processed_equation": processed_equation,
-                "result": result,
-                "cil_adaptation": True,
-                "learning_style": learning_profile.learning_style.value,
-                "difficulty_level": learning_profile.difficulty_level.value,
-                "success_rate": learning_profile.success_rate
+                "result": result
             })
             self.log_operation("belief_evaluated", {
                 "belief": self.name,
                 "values": self.values,
-                "result": result,
-                "cil_adaptation": True
+                "result": result
             })
             
             return result
